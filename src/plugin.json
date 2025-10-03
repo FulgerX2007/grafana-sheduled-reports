@@ -1,0 +1,57 @@
+{
+  "$schema": "https://raw.githubusercontent.com/grafana/grafana/master/docs/sources/developers/plugins/plugin.schema.json",
+  "type": "app",
+  "name": "Reporting",
+  "id": "grafana-app-reporting",
+  "info": {
+    "description": "Schedule and email dashboard reports as PDF or HTML",
+    "author": {
+      "name": "Your Organization",
+      "url": "https://example.com"
+    },
+    "keywords": ["reporting", "pdf", "email", "scheduler"],
+    "version": "1.0.0",
+    "updated": "%TODAY%",
+    "logos": {
+      "small": "img/logo.svg",
+      "large": "img/logo.svg"
+    },
+    "screenshots": [],
+    "links": [
+      {
+        "name": "Documentation",
+        "url": "https://github.com/yourusername/grafana-app-reporting"
+      }
+    ]
+  },
+  "includes": [
+    {
+      "type": "page",
+      "name": "Schedules",
+      "path": "/a/grafana-app-reporting",
+      "role": "Editor",
+      "addToNav": true,
+      "defaultNav": true
+    },
+    {
+      "type": "page",
+      "name": "Settings",
+      "path": "/a/grafana-app-reporting/settings",
+      "role": "Admin",
+      "addToNav": true
+    }
+  ],
+  "dependencies": {
+    "grafanaDependency": ">=10.0.0",
+    "plugins": []
+  },
+  "backend": true,
+  "executable": "gpx_reporting",
+  "routes": [
+    {
+      "path": "api/*",
+      "method": "*",
+      "reqRole": "Editor"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+node_modules
+dist
+coverage
+.DS_Store
+*.log
+.env
+*.db
+*.sqlite
+*.sqlite3
+artifacts/
+vendor/
