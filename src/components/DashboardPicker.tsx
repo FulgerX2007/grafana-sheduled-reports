@@ -5,7 +5,7 @@ import { getBackendSrv } from '@grafana/runtime';
 
 interface DashboardPickerProps {
   value: string;
-  onChange: (uid: string) => void;
+  onChange: (uid: string, title?: string) => void;
 }
 
 export const DashboardPicker: React.FC<DashboardPickerProps> = ({ value, onChange }) => {
@@ -37,7 +37,7 @@ export const DashboardPicker: React.FC<DashboardPickerProps> = ({ value, onChang
     <Select
       options={dashboards}
       value={value}
-      onChange={(v) => onChange(v.value!)}
+      onChange={(v) => onChange(v.value!, v.label)}
       onOpenMenu={() => loadDashboards()}
       isLoading={loading}
       placeholder="Select dashboard"

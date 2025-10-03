@@ -46,7 +46,17 @@ export const RunHistoryPage: React.FC<RunHistoryPageProps> = ({ onNavigate, sche
 
   return (
     <div className={styles.container}>
-      <h2>Run History</h2>
+      <div className={styles.header}>
+        <h2>Run History</h2>
+        {/* @ts-ignore */}
+        <Button
+          variant="secondary"
+          icon="arrow-left"
+          onClick={() => onNavigate('schedules')}
+        >
+          Back to Schedules
+        </Button>
+      </div>
       {safeRuns.length === 0 ? (
         <p>No runs yet</p>
       ) : (
@@ -112,6 +122,12 @@ export const RunHistoryPage: React.FC<RunHistoryPageProps> = ({ onNavigate, sche
 const getStyles = (theme: GrafanaTheme2) => ({
   container: css`
     padding: ${theme.spacing(2)};
+  `,
+  header: css`
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: ${theme.spacing(2)};
   `,
   statusSuccess: css`
     color: ${theme.colors.success.text};

@@ -108,6 +108,7 @@ export interface Limits {
 export interface ScheduleFormData {
   name: string;
   dashboard_uid: string;
+  dashboard_title?: string;
   panel_ids?: number[];
   range_from: string;
   range_to: string;

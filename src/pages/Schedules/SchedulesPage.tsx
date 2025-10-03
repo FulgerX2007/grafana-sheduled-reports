@@ -127,7 +127,14 @@ export const SchedulesPage: React.FC<SchedulesPageProps> = ({ onNavigate }) => {
               <tr key={schedule.id}>
                 <td style={{ padding: '8px', borderBottom: '1px solid #eee' }}>{schedule.name}</td>
                 <td style={{ padding: '8px', borderBottom: '1px solid #eee' }}>
-                  {schedule.dashboard_title || schedule.dashboard_uid}
+                  <a
+                    href={`/d/${schedule.dashboard_uid}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={styles.dashboardLink}
+                  >
+                    {schedule.dashboard_title || schedule.dashboard_uid}
+                  </a>
                 </td>
                 <td style={{ padding: '8px', borderBottom: '1px solid #eee' }}>
                   {schedule.interval_type === 'cron' ? schedule.cron_expr : schedule.interval_type}
@@ -214,6 +221,14 @@ const getStyles = (theme: GrafanaTheme2) => ({
   `,
   statusDisabled: css`
     color: ${theme.colors.text.secondary};
+  `,
+  dashboardLink: css`
+    color: ${theme.colors.primary.text};
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
   `,
   empty: css`
     text-align: center;

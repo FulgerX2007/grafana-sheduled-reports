@@ -94,7 +94,7 @@ export const ScheduleEditPage: React.FC<ScheduleEditPageProps> = ({ onNavigate, 
               <Field label="Dashboard" required>
                 <DashboardPicker
                   value={formData.dashboard_uid}
-                  onChange={(uid) => setFormData({ ...formData, dashboard_uid: uid })}
+                  onChange={(uid, title) => setFormData({ ...formData, dashboard_uid: uid, dashboard_title: title })}
                 />
               </Field>
 
