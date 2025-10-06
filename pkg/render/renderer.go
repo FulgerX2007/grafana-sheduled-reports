@@ -149,6 +149,13 @@ func (r *Renderer) buildGrafanaRenderURL(schedule *model.Schedule) (string, erro
 	q.Set("theme", "light")
 	q.Set("kiosk", "true") // Hide menu, header, and time picker
 
+	// Set device scale factor for higher quality (default to 3 if not configured)
+	scaleFactor := r.config.DeviceScaleFactor
+	if scaleFactor == 0 {
+		scaleFactor = 3.0
+	}
+	q.Set("scale", fmt.Sprintf("%.1f", scaleFactor))
+
 	// Add dashboard variables
 	for k, v := range schedule.Variables {
 		q.Set("var-"+k, v)

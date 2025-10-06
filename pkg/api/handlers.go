@@ -249,11 +249,12 @@ func (h *Handler) handleSettings(w http.ResponseWriter, r *http.Request) {
 				OrgID:          orgID,
 				UseGrafanaSMTP: true,
 				RendererConfig: model.RendererConfig{
-					URL:            "http://renderer:8081/render",
-					TimeoutMS:      60000,
-					DelayMS:        1000,
-					ViewportWidth:  1920,
-					ViewportHeight: 1080,
+					URL:               "http://renderer:8081/render",
+					TimeoutMS:         60000,
+					DelayMS:           1000,
+					ViewportWidth:     1920,
+					ViewportHeight:    1080,
+					DeviceScaleFactor: 3.0, // 3x scaling for higher quality screenshots
 				},
 				Limits: model.Limits{
 					MaxRecipients:        50,
