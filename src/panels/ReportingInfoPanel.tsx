@@ -37,7 +37,7 @@ export const ReportingInfoPanel: React.FC<PanelProps> = ({ width, height }) => {
   const loadSchedules = async (uid: string) => {
     try {
       const response = await getBackendSrv().get(
-        `/api/plugins/grafana-app-reporting/resources/api/dashboards/${uid}/schedules`
+        `/api/plugins/sheduled-reports-app/resources/api/dashboards/${uid}/schedules`
       );
       const scheduleList = response.schedules || [];
       setSchedules(scheduleList);

@@ -21,7 +21,7 @@ export const SchedulesPage: React.FC<SchedulesPageProps> = ({ onNavigate }) => {
 
   const loadSchedules = async () => {
     try {
-      const response = await getBackendSrv().get('/api/plugins/grafana-app-reporting/resources/api/schedules');
+      const response = await getBackendSrv().get('/api/plugins/sheduled-reports-app/resources/api/schedules');
       console.log('API Response:', response);
 
       let schedulesData: Schedule[] = [];
@@ -71,7 +71,7 @@ export const SchedulesPage: React.FC<SchedulesPageProps> = ({ onNavigate }) => {
       return;
     }
     try {
-      await getBackendSrv().delete(`/api/plugins/grafana-app-reporting/resources/api/schedules/${id}`);
+      await getBackendSrv().delete(`/api/plugins/sheduled-reports-app/resources/api/schedules/${id}`);
       loadSchedules();
     } catch (error) {
       console.error('Failed to delete schedule:', error);
@@ -80,7 +80,7 @@ export const SchedulesPage: React.FC<SchedulesPageProps> = ({ onNavigate }) => {
 
   const handleRunNow = async (id: number) => {
     try {
-      await getBackendSrv().post(`/api/plugins/grafana-app-reporting/resources/api/schedules/${id}/run`);
+      await getBackendSrv().post(`/api/plugins/sheduled-reports-app/resources/api/schedules/${id}/run`);
       alert('Report generation started');
     } catch (error) {
       console.error('Failed to run schedule:', error);
@@ -89,7 +89,7 @@ export const SchedulesPage: React.FC<SchedulesPageProps> = ({ onNavigate }) => {
 
   const handleToggle = async (schedule: Schedule) => {
     try {
-      await getBackendSrv().put(`/api/plugins/grafana-app-reporting/resources/api/schedules/${schedule.id}`, {
+      await getBackendSrv().put(`/api/plugins/sheduled-reports-app/resources/api/schedules/${schedule.id}`, {
         ...schedule,
         enabled: !schedule.enabled,
       });

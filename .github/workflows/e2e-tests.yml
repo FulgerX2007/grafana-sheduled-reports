@@ -1,0 +1,157 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+jobs:
+  e2e-tests:
+    name: Run E2E Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    strategy:
+      fail-fast: false
+      matrix:
+        grafana-version:
+          - '10.0.0'
+          - '11.0.0'
+          - 'latest'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+          cache: true
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Build backend
+        env:
+          CGO_ENABLED: 1
+        run: |
+          go mod download
+          go build -o dist/gpx_reporting ./cmd/backend
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Create .env file for E2E tests
+        run: |
+          cat > .env <<EOF
+          GF_ADMIN_USER=admin
+          GF_ADMIN_PASSWORD=admin
+          EOF
+
+      - name: Start E2E environment
+        run: |
+          docker compose -f docker-compose.e2e.yml up -d
+          npx wait-on http://localhost:3000/api/health -t 120000
+
+      - name: Run E2E tests
+        env:
+          CI: true
+          GRAFANA_VERSION: ${{ matrix.grafana-version }}
+        run: npm run test:e2e
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-grafana-${{ matrix.grafana-version }}
+          path: playwright-report/
+          retention-days: 30
+
+      - name: Upload test videos
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-videos-grafana-${{ matrix.grafana-version }}
+          path: test-results/
+          retention-days: 7
+
+      - name: Collect Docker logs
+        if: failure()
+        run: |
+          mkdir -p docker-logs
+          docker compose -f docker-compose.e2e.yml logs > docker-logs/compose.log
+
+      - name: Upload Docker logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-logs-grafana-${{ matrix.grafana-version }}
+          path: docker-logs/
+          retention-days: 7
+
+      - name: Stop E2E environment
+        if: always()
+        run: docker compose -f docker-compose.e2e.yml down -v
+
+  plugin-validation:
+    name: Validate Plugin
+    runs-on: ubuntu-latest
+    needs: e2e-tests
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build plugin
+        env:
+          CGO_ENABLED: 1
+        run: |
+          npm run build
+          go build -o dist/gpx_reporting ./cmd/backend
+
+      - name: Validate plugin.json
+        run: |
+          if [ ! -f "src/plugin.json" ]; then
+            echo "plugin.json not found!"
+            exit 1
+          fi
+          # Check for required fields
+          jq -e '.id' src/plugin.json
+          jq -e '.type' src/plugin.json
+          jq -e '.info.version' src/plugin.json
+
+      - name: Check plugin structure
+        run: |
+          required_files=("dist/module.js" "dist/gpx_reporting" "src/plugin.json")
+          for file in "${required_files[@]}"; do
+            if [ ! -f "$file" ] && [ ! -f "${file}.gz" ]; then
+              echo "Required file $file not found!"
+              exit 1
+            fi
+          done

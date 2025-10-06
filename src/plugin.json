@@ -28,7 +28,7 @@
     {
       "type": "page",
       "name": "Schedules",
-      "path": "/a/grafana-app-reporting",
+      "path": "/a/sheduled-reports-app",
       "role": "Editor",
       "addToNav": true,
       "defaultNav": true
@@ -36,7 +36,7 @@
     {
       "type": "page",
       "name": "Settings",
-      "path": "/a/grafana-app-reporting/settings",
+      "path": "/a/sheduled-reports-app/settings",
       "role": "Admin",
       "addToNav": true
     }

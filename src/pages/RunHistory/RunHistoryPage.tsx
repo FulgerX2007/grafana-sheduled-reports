@@ -24,7 +24,7 @@ export const RunHistoryPage: React.FC<RunHistoryPageProps> = ({ onNavigate, sche
   const loadRuns = async () => {
     try {
       const response = await getBackendSrv().get(
-        `/api/plugins/grafana-app-reporting/resources/api/schedules/${scheduleId}/runs`
+        `/api/plugins/sheduled-reports-app/resources/api/schedules/${scheduleId}/runs`
       );
       setRuns(response.runs || []);
     } catch (error) {
@@ -35,7 +35,7 @@ export const RunHistoryPage: React.FC<RunHistoryPageProps> = ({ onNavigate, sche
   };
 
   const downloadArtifact = async (runId: number) => {
-    window.open(`/api/plugins/grafana-app-reporting/resources/api/runs/${runId}/artifact`, '_blank');
+    window.open(`/api/plugins/sheduled-reports-app/resources/api/runs/${runId}/artifact`, '_blank');
   };
 
   if (loading) {

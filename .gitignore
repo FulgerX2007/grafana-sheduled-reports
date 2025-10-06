@@ -4,8 +4,25 @@ coverage
 .DS_Store
 *.log
 .env
+.env.local
 *.db
 *.sqlite
 *.sqlite3
 artifacts/
 vendor/
+
+# E2E Testing
+test-results/
+playwright-report/
+playwright/.cache/
+docker-logs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temporary
+tmp/
+temp/

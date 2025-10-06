@@ -52,7 +52,7 @@ export const ScheduleEditPage: React.FC<ScheduleEditPageProps> = ({ onNavigate, 
 
   const loadSchedule = async () => {
     try {
-      const response = await getBackendSrv().get(`/api/plugins/grafana-app-reporting/resources/api/schedules/${scheduleId}`);
+      const response = await getBackendSrv().get(`/api/plugins/sheduled-reports-app/resources/api/schedules/${scheduleId}`);
       setFormData(response);
     } catch (error) {
       console.error('Failed to load schedule:', error);
@@ -62,9 +62,9 @@ export const ScheduleEditPage: React.FC<ScheduleEditPageProps> = ({ onNavigate, 
   const handleSubmit = async () => {
     try {
       if (isNew) {
-        await getBackendSrv().post('/api/plugins/grafana-app-reporting/resources/api/schedules', formData);
+        await getBackendSrv().post('/api/plugins/sheduled-reports-app/resources/api/schedules', formData);
       } else {
-        await getBackendSrv().put(`/api/plugins/grafana-app-reporting/resources/api/schedules/${scheduleId}`, formData);
+        await getBackendSrv().put(`/api/plugins/sheduled-reports-app/resources/api/schedules/${scheduleId}`, formData);
       }
       onNavigate('schedules');
     } catch (error) {

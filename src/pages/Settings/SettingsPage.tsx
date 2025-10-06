@@ -34,7 +34,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate }) => {
 
   const loadSettings = async () => {
     try {
-      const response = await getBackendSrv().get('/api/plugins/grafana-app-reporting/resources/api/settings');
+      const response = await getBackendSrv().get('/api/plugins/sheduled-reports-app/resources/api/settings');
       if (response) {
         setSettings(response);
       }
@@ -45,7 +45,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate }) => {
 
   const handleSubmit = async () => {
     try {
-      await getBackendSrv().post('/api/plugins/grafana-app-reporting/resources/api/settings', settings);
+      await getBackendSrv().post('/api/plugins/sheduled-reports-app/resources/api/settings', settings);
       alert('Settings saved successfully');
     } catch (error) {
       console.error('Failed to save settings:', error);

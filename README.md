@@ -110,6 +110,86 @@ go test -v ./...
 
 # Run frontend tests only
 npm test
+
+# Run E2E tests
+npm run test:e2e
+
+# Run E2E tests with UI (interactive mode)
+npm run test:e2e:ui
+
+# Run E2E tests in headed browser mode
+npm run test:e2e:headed
+
+# Debug E2E tests
+npm run test:e2e:debug
+
+# View E2E test report
+npm run test:e2e:report
+```
+
+### End-to-End (E2E) Testing
+
+This plugin includes comprehensive E2E tests using Playwright to ensure it works correctly across various Grafana versions and environments.
+
+**Test Coverage:**
+- Plugin installation and enablement
+- Schedule creation, editing, and deletion (CRUD operations)
+- Manual report execution
+- Report artifact generation and download
+- Settings configuration (SMTP, renderer, limits)
+- Multi-version Grafana compatibility
+
+**Running E2E Tests Locally:**
+
+1. Build the plugin:
+   ```bash
+   npm run build
+   go build -o dist/gpx_reporting ./cmd/backend
+   ```
+
+2. Start the E2E test environment:
+   ```bash
+   npm run e2e:setup
+   ```
+   This starts Grafana, the image renderer, and MailHog (test SMTP server).
+
+3. Run the tests:
+   ```bash
+   npm run test:e2e
+   ```
+
+4. Clean up:
+   ```bash
+   npm run e2e:teardown
+   ```
+
+**E2E Test Environment:**
+- Grafana on http://localhost:3000 (admin/admin)
+- Grafana Image Renderer on http://localhost:8081
+- MailHog SMTP on http://localhost:8025 (web UI for viewing test emails)
+
+**CI/CD Integration:**
+
+E2E tests run automatically on:
+- Push to main/develop branches
+- Pull requests
+- Manual workflow dispatch
+
+Tests run against multiple Grafana versions (10.0.0, 11.0.0, latest) to ensure compatibility.
+
+**Writing New E2E Tests:**
+
+Create test files in `e2e/tests/` directory:
+
+```typescript
+import { test, expect } from '../fixtures/auth';
+
+test.describe('My Feature', () => {
+  test('should do something', async ({ authenticatedPage: page }) => {
+    await page.goto('/a/sheduled-reports-app');
+    // Your test code here
+  });
+});
 ```
 
 ## Configuration
