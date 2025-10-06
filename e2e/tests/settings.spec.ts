@@ -8,12 +8,8 @@ test.describe('Plugin Settings', () => {
   });
 
   test('should load settings page', async ({ authenticatedPage: page }) => {
-    // Verify settings page elements - check for Settings tab or any heading
-    const settingsTab = page.locator('[role="tab"]:has-text("Settings")');
-    const settingsHeading = page.locator('h2, h3').filter({ hasText: /Settings/i });
-
-    const hasSettings = await settingsTab.isVisible() || await settingsHeading.isVisible();
-    expect(hasSettings).toBeTruthy();
+    // Verify settings tab is visible
+    await expect(page.locator('[role="tab"]:has-text("Settings")')).toBeVisible({ timeout: 10000 });
   });
 
   test('should configure SMTP settings', async ({ authenticatedPage: page }) => {

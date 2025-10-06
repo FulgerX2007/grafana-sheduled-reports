@@ -39,25 +39,19 @@ test.describe('Plugin Health Checks', () => {
     // Navigate to the app
     await page.goto('/a/sheduled-reports-app');
     await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(1000);
 
-    // Verify the Schedules page loads - check for header or New Schedule button
-    await expect(
-      page.locator('h2:has-text("Report Schedules")').or(
-        page.locator('button:has-text("New Schedule")')
-      )
-    ).toBeVisible({ timeout: 15000 });
+    // Verify the Schedules page loads - check for header
+    await expect(page.locator('h2:has-text("Report Schedules")')).toBeVisible({ timeout: 10000 });
   });
 
   test('should display settings page', async ({ authenticatedPage: page }) => {
     // Navigate to settings
     await page.goto('/a/sheduled-reports-app/settings');
     await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(1000);
 
-    // Verify settings page loads - look for Settings tab or any settings content
-    await expect(
-      page.locator('[role="tab"]:has-text("Settings")').or(
-        page.locator('h2, h3').filter({ hasText: /Settings|Configuration/i })
-      )
-    ).toBeVisible({ timeout: 15000 });
+    // Verify settings page loads - look for Settings tab
+    await expect(page.locator('[role="tab"]:has-text("Settings")')).toBeVisible({ timeout: 10000 });
   });
 });
