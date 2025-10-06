@@ -13,6 +13,7 @@ export const SchedulesPage: React.FC<SchedulesPageProps> = ({ onNavigate }) => {
   const styles = useStyles2(getStyles);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [loading, setLoading] = useState(true);
+  const [dashboardFolders, setDashboardFolders] = useState<Record<string, string>>({});
 
   useEffect(() => {
     loadSchedules();
@@ -23,18 +24,40 @@ export const SchedulesPage: React.FC<SchedulesPageProps> = ({ onNavigate }) => {
       const response = await getBackendSrv().get('/api/plugins/grafana-app-reporting/resources/api/schedules');
       console.log('API Response:', response);
 
+      let schedulesData: Schedule[] = [];
       // Handle different response formats
       if (Array.isArray(response)) {
-        setSchedules(response);
+        schedulesData = response;
       } else if (response && response.schedules && Array.isArray(response.schedules)) {
-        setSchedules(response.schedules);
+        schedulesData = response.schedules;
       } else if (response && response.schedules === null) {
         // Backend returned null instead of empty array
-        setSchedules([]);
+        schedulesData = [];
       } else {
         console.warn('Unexpected response format:', response);
-        setSchedules([]);
+        schedulesData = [];
       }
+
+      setSchedules(schedulesData);
+
+      // Fetch folder information for all dashboards
+      const folders: Record<string, string> = {};
+      for (const schedule of schedulesData) {
+        if (schedule.dashboard_uid) {
+          try {
+            const dashboards = await getBackendSrv().get('/api/search', {
+              type: 'dash-db',
+              dashboardUIDs: schedule.dashboard_uid,
+            });
+            if (dashboards && dashboards.length > 0 && dashboards[0].folderTitle) {
+              folders[schedule.dashboard_uid] = dashboards[0].folderTitle;
+            }
+          } catch (error) {
+            console.error(`Failed to load folder for dashboard ${schedule.dashboard_uid}:`, error);
+          }
+        }
+      }
+      setDashboardFolders(folders);
     } catch (error) {
       console.error('Failed to load schedules:', error);
       setSchedules([]);
@@ -127,14 +150,22 @@ export const SchedulesPage: React.FC<SchedulesPageProps> = ({ onNavigate }) => {
               <tr key={schedule.id}>
                 <td style={{ padding: '8px', borderBottom: '1px solid #eee' }}>{schedule.name}</td>
                 <td style={{ padding: '8px', borderBottom: '1px solid #eee' }}>
-                  <a
-                    href={`/d/${schedule.dashboard_uid}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={styles.dashboardLink}
-                  >
-                    {schedule.dashboard_title || schedule.dashboard_uid}
-                  </a>
+                  <div>
+                    <a
+                      href={`/d/${schedule.dashboard_uid}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={styles.dashboardLink}
+                    >
+                      {schedule.dashboard_title || schedule.dashboard_uid}
+                    </a>
+                    {dashboardFolders[schedule.dashboard_uid] && (
+                      <div className={styles.folderName}>
+                        <Icon name="folder" size="sm" />
+                        {dashboardFolders[schedule.dashboard_uid]}
+                      </div>
+                    )}
+                  </div>
                 </td>
                 <td style={{ padding: '8px', borderBottom: '1px solid #eee' }}>
                   {schedule.interval_type === 'cron' ? schedule.cron_expr : schedule.interval_type}
@@ -229,6 +260,14 @@ const getStyles = (theme: GrafanaTheme2) => ({
     &:hover {
       text-decoration: underline;
     }
+  `,
+  folderName: css`
+    display: flex;
+    align-items: center;
+    gap: ${theme.spacing(0.5)};
+    margin-top: ${theme.spacing(0.5)};
+    font-size: ${theme.typography.bodySmall.fontSize};
+    color: ${theme.colors.text.secondary};
   `,
   empty: css`
     text-align: center;
