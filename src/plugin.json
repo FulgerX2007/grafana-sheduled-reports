@@ -2,12 +2,12 @@
   "$schema": "https://raw.githubusercontent.com/grafana/grafana/master/docs/sources/developers/plugins/plugin.schema.json",
   "type": "app",
   "name": "Scheduled Reports",
-  "id": "grafana-app-reporting",
+  "id": "sheduled-reports-app",
   "info": {
     "description": "Schedule and email dashboard reports as PDF or HTML",
     "author": {
-      "name": "Your Organization",
-      "url": "https://example.com"
+      "name": "Andrian Iliev",
+      "url": "https://github.com/FulgerX2007/"
     },
     "keywords": ["reporting", "pdf", "email", "scheduler"],
     "version": "1.0.0",
@@ -20,7 +20,7 @@
     "links": [
       {
         "name": "Documentation",
-        "url": "https://github.com/yourusername/grafana-app-reporting"
+        "url": "https://github.com/FulgerX2007/grafana-sheduled-reports"
       }
     ]
   },
@@ -43,7 +43,14 @@
   ],
   "dependencies": {
     "grafanaDependency": ">=10.0.0",
-    "plugins": []
+    "plugins": [
+      {
+        "type": "renderer",
+        "id": "grafana-image-renderer",
+        "name": "Image Renderer",
+        "version": ">=3.0.0"
+      }
+    ]
   },
   "backend": true,
   "executable": "gpx_reporting",
