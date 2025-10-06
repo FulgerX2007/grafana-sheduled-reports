@@ -21,6 +21,18 @@ export const RunHistoryPage: React.FC<RunHistoryPageProps> = ({ onNavigate, sche
     }
   }, [scheduleId]);
 
+  useEffect(() => {
+    if (!scheduleId) {
+      return;
+    }
+
+    const interval = setInterval(() => {
+      loadRuns();
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [scheduleId]);
+
   const loadRuns = async () => {
     try {
       const response = await getBackendSrv().get(
