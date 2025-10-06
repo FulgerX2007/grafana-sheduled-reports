@@ -50,7 +50,7 @@ export const ReportingInfoPanel: React.FC<PanelProps> = ({ width, height }) => {
   };
 
   const handleManageReports = () => {
-    locationService.push('/a/grafana-app-reporting');
+    locationService.push('/a/sheduled-reports-app');
   };
 
   if (loading) {

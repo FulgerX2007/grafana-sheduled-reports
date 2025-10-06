@@ -1,4 +1,4 @@
-module github.com/yourusername/grafana-app-reporting
+module github.com/yourusername/sheduled-reports-app
 
 go 1.21
 

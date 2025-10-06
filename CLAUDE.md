@@ -21,7 +21,7 @@ This is a Grafana App Plugin for scheduled dashboard reporting in Grafana OSS. I
 ## Project Structure
 
 ```
-grafana-app-reporting/
+sheduled-reports-app/
 ├─ src/                      # Frontend (React/TypeScript)
 │  ├─ pages/                 # App pages: Schedules, ScheduleEdit, Settings, Templates
 │  ├─ components/            # UI components (DashboardPicker, CronEditor, etc.)

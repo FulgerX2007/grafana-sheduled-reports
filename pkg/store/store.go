@@ -6,7 +6,7 @@ import (
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/yourusername/grafana-app-reporting/pkg/model"
+	"github.com/yourusername/sheduled-reports-app/pkg/model"
 )
 
 // Store handles database operations

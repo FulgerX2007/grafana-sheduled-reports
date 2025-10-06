@@ -115,7 +115,7 @@ Tables, all with `org_id`, `created_at`, `updated_at`:
 # Repo structure
 
 ```
-grafana-app-reporting/
+sheduled-reports-app/
 ├─ src/                      # frontend
 │  ├─ pages/
 │  │  ├─ Schedules/

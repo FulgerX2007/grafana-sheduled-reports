@@ -12,11 +12,11 @@ import (
 	"time"
 
 	"github.com/robfig/cron/v3"
-	"github.com/yourusername/grafana-app-reporting/pkg/mail"
-	"github.com/yourusername/grafana-app-reporting/pkg/model"
-	"github.com/yourusername/grafana-app-reporting/pkg/pdf"
-	"github.com/yourusername/grafana-app-reporting/pkg/render"
-	"github.com/yourusername/grafana-app-reporting/pkg/store"
+	"github.com/yourusername/sheduled-reports-app/pkg/mail"
+	"github.com/yourusername/sheduled-reports-app/pkg/model"
+	"github.com/yourusername/sheduled-reports-app/pkg/pdf"
+	"github.com/yourusername/sheduled-reports-app/pkg/render"
+	"github.com/yourusername/sheduled-reports-app/pkg/store"
 )
 
 // Scheduler handles report scheduling

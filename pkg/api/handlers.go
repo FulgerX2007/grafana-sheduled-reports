@@ -11,9 +11,9 @@ import (
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/resource/httpadapter"
-	"github.com/yourusername/grafana-app-reporting/pkg/cron"
-	"github.com/yourusername/grafana-app-reporting/pkg/model"
-	"github.com/yourusername/grafana-app-reporting/pkg/store"
+	"github.com/yourusername/sheduled-reports-app/pkg/cron"
+	"github.com/yourusername/sheduled-reports-app/pkg/model"
+	"github.com/yourusername/sheduled-reports-app/pkg/store"
 )
 
 // Handler handles HTTP API requests

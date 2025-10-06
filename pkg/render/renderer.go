@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/yourusername/grafana-app-reporting/pkg/model"
+	"github.com/yourusername/sheduled-reports-app/pkg/model"
 )
 
 // Renderer handles dashboard rendering

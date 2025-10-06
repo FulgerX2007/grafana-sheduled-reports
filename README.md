@@ -28,8 +28,8 @@
 ### 1. Clone and Build
 
 ```bash
-git clone https://github.com/yourusername/grafana-app-reporting.git
-cd grafana-app-reporting
+git clone https://github.com/yourusername/sheduled-reports-app.git
+cd sheduled-reports-app
 make install
 make build
 ```
@@ -347,7 +347,7 @@ make dist  # Creates distribution zip
 
 1. Copy plugin to Grafana plugins directory:
    ```bash
-   cp -r dist /var/lib/grafana/plugins/grafana-app-reporting
+   cp -r dist /var/lib/grafana/plugins/sheduled-reports-app
    ```
 
 2. Restart Grafana:
@@ -358,7 +358,7 @@ make dist  # Creates distribution zip
 3. Allow unsigned plugin (if not signed):
    ```ini
    [plugins]
-   allow_loading_unsigned_plugins = grafana-app-reporting
+   allow_loading_unsigned_plugins = sheduled-reports-app
    ```
 
 ### Recommended Settings
@@ -375,42 +375,42 @@ make dist  # Creates distribution zip
 
 ```bash
 # List schedules
-GET /api/plugins/grafana-app-reporting/resources/api/schedules
+GET /api/plugins/sheduled-reports-app/resources/api/schedules
 
 # Create schedule
-POST /api/plugins/grafana-app-reporting/resources/api/schedules
+POST /api/plugins/sheduled-reports-app/resources/api/schedules
 
 # Get schedule
-GET /api/plugins/grafana-app-reporting/resources/api/schedules/{id}
+GET /api/plugins/sheduled-reports-app/resources/api/schedules/{id}
 
 # Update schedule
-PUT /api/plugins/grafana-app-reporting/resources/api/schedules/{id}
+PUT /api/plugins/sheduled-reports-app/resources/api/schedules/{id}
 
 # Delete schedule
-DELETE /api/plugins/grafana-app-reporting/resources/api/schedules/{id}
+DELETE /api/plugins/sheduled-reports-app/resources/api/schedules/{id}
 
 # Run now
-POST /api/plugins/grafana-app-reporting/resources/api/schedules/{id}/run
+POST /api/plugins/sheduled-reports-app/resources/api/schedules/{id}/run
 
 # Get runs
-GET /api/plugins/grafana-app-reporting/resources/api/schedules/{id}/runs
+GET /api/plugins/sheduled-reports-app/resources/api/schedules/{id}/runs
 ```
 
 ### Settings
 
 ```bash
 # Get settings
-GET /api/plugins/grafana-app-reporting/resources/api/settings
+GET /api/plugins/sheduled-reports-app/resources/api/settings
 
 # Update settings
-POST /api/plugins/grafana-app-reporting/resources/api/settings
+POST /api/plugins/sheduled-reports-app/resources/api/settings
 ```
 
 ### Artifacts
 
 ```bash
 # Download artifact
-GET /api/plugins/grafana-app-reporting/resources/api/runs/{id}/artifact
+GET /api/plugins/sheduled-reports-app/resources/api/runs/{id}/artifact
 ```
 
 ## Contributing
@@ -430,5 +430,5 @@ Apache 2.0
 ## Support
 
 - Documentation: See [CLAUDE.md](./CLAUDE.md) for development guidance
-- Issues: https://github.com/yourusername/grafana-app-reporting/issues
-- Discussions: https://github.com/yourusername/grafana-app-reporting/discussions
+- Issues: https://github.com/yourusername/sheduled-reports-app/issues
+- Discussions: https://github.com/yourusername/sheduled-reports-app/discussions

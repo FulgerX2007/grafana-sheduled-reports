@@ -9,7 +9,7 @@ export const DocumentationPage: React.FC = () => {
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <img src="public/plugins/grafana-app-reporting/img/logo.png" alt="Scheduled Reports" className={styles.logo} />
+        <img src="public/plugins/sheduled-reports-app/img/logo.png" alt="Scheduled Reports" className={styles.logo} />
         <h1>Scheduled Reports Documentation</h1>
       </div>
 

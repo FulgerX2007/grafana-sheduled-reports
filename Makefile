@@ -53,4 +53,4 @@ dist: build sign
 	mkdir -p dist
 	cp -r src/plugin.json dist/
 	cp -r dist/gpx_reporting dist/
-	cd dist && zip -r grafana-app-reporting.zip .
+	cd dist && zip -r sheduled-reports-app.zip .

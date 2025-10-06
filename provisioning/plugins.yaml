@@ -4,7 +4,7 @@
 apiVersion: 1
 
 apps:
-  - type: grafana-app-reporting
+  - type: sheduled-reports-app
     disabled: false
     jsonData:
       # Add any default configuration here
