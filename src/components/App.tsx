@@ -5,8 +5,9 @@ import { SchedulesPage } from '../pages/Schedules/SchedulesPage';
 import { ScheduleEditPage } from '../pages/Schedules/ScheduleEditPage';
 import { RunHistoryPage } from '../pages/RunHistory/RunHistoryPage';
 import { SettingsPage } from '../pages/Settings/SettingsPage';
+import { DocumentationPage } from '../pages/Documentation/DocumentationPage';
 
-type Page = 'schedules' | 'schedule-new' | 'schedule-edit' | 'run-history' | 'settings';
+type Page = 'schedules' | 'schedule-new' | 'schedule-edit' | 'run-history' | 'settings' | 'documentation';
 
 export const App: React.FC<AppRootProps> = (props) => {
   const [currentPage, setCurrentPage] = useState<Page>('schedules');
@@ -17,6 +18,8 @@ export const App: React.FC<AppRootProps> = (props) => {
     const path = props.path || '';
     if (path.includes('settings')) {
       setCurrentPage('settings');
+    } else if (path.includes('documentation')) {
+      setCurrentPage('documentation');
     } else {
       setCurrentPage('schedules');
     }
@@ -41,13 +44,15 @@ export const App: React.FC<AppRootProps> = (props) => {
         return <RunHistoryPage onNavigate={navigate} scheduleId={selectedScheduleId} />;
       case 'settings':
         return <SettingsPage onNavigate={navigate} />;
+      case 'documentation':
+        return <DocumentationPage />;
       default:
         return <SchedulesPage onNavigate={navigate} />;
     }
   };
 
   // Show tabs only on main pages (not on edit/new/history pages)
-  const showTabs = currentPage === 'schedules' || currentPage === 'settings';
+  const showTabs = currentPage === 'schedules' || currentPage === 'settings' || currentPage === 'documentation';
 
   return (
     <div>
@@ -58,6 +63,12 @@ export const App: React.FC<AppRootProps> = (props) => {
             label="Schedules"
             active={currentPage === 'schedules'}
             onChangeTab={() => navigate('schedules')}
+          />
+          {/* @ts-ignore */}
+          <Tab
+            label="Documentation"
+            active={currentPage === 'documentation'}
+            onChangeTab={() => navigate('documentation')}
           />
           {/* @ts-ignore */}
           <Tab
