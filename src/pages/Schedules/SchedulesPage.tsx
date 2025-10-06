@@ -193,9 +193,10 @@ export const SchedulesPage: React.FC<SchedulesPageProps> = ({ onNavigate }) => {
                     <Button
                       size="sm"
                       variant="secondary"
-                      icon={schedule.enabled ? 'pause' : 'play'}
+                      icon={schedule.enabled ? 'toggle-on' : 'toggle-off'}
                       onClick={() => handleToggle(schedule)}
                       title={schedule.enabled ? 'Disable' : 'Enable'}
+                      className={schedule.enabled ? styles.toggleEnabled : styles.toggleDisabled}
                     />
                     {/* @ts-ignore */}
                     <Button
@@ -252,6 +253,20 @@ const getStyles = (theme: GrafanaTheme2) => ({
   `,
   statusDisabled: css`
     color: ${theme.colors.text.secondary};
+  `,
+  toggleEnabled: css`
+    color: ${theme.colors.success.text};
+
+    &:hover {
+      color: ${theme.colors.success.text};
+    }
+  `,
+  toggleDisabled: css`
+    color: ${theme.colors.text.secondary};
+
+    &:hover {
+      color: ${theme.colors.text.secondary};
+    }
   `,
   dashboardLink: css`
     color: ${theme.colors.primary.text};
