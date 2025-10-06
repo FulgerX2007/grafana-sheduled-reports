@@ -234,10 +234,11 @@ After enabling the plugin, configure it in the Settings page:
 3. Configure:
    - **Name**: Descriptive name for the schedule
    - **Dashboard**: Select dashboard to render
+     - *Note: When you select a dashboard, its template variables are automatically loaded*
    - **Format**: PDF or HTML
    - **Time Range**: Dashboard time range (e.g., "now-7d" to "now")
    - **Schedule**: Daily, Weekly, Monthly, or Custom cron
-   - **Variables**: Dashboard variable values
+   - **Variables**: Dashboard variable values (auto-populated from selected dashboard)
    - **Recipients**: Email addresses (To, CC, BCC)
    - **Subject & Body**: Email template with placeholders
 

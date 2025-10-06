@@ -60,6 +60,25 @@ export const ScheduleEditPage: React.FC<ScheduleEditPageProps> = ({ onNavigate, 
     }
   };
 
+  const loadDashboardVariables = async (dashboardUid: string) => {
+    try {
+      const dashboard = await getBackendSrv().get(`/api/dashboards/uid/${dashboardUid}`);
+      const templateVars = dashboard.dashboard?.templating?.list || [];
+
+      const variables: Record<string, string> = {};
+      templateVars.forEach((v: any) => {
+        if (v.name && v.type !== 'constant' && v.type !== 'datasource') {
+          // Use current value if exists, otherwise use default or empty string
+          variables[v.name] = v.current?.value || v.default || '';
+        }
+      });
+
+      setFormData((prev) => ({ ...prev, variables }));
+    } catch (error) {
+      console.error('Failed to load dashboard variables:', error);
+    }
+  };
+
   const handleSubmit = async () => {
     const appEvents = getAppEvents();
     try {
@@ -99,7 +118,10 @@ export const ScheduleEditPage: React.FC<ScheduleEditPageProps> = ({ onNavigate, 
               <Field label="Dashboard" required>
                 <DashboardPicker
                   value={formData.dashboard_uid}
-                  onChange={(uid, title) => setFormData({ ...formData, dashboard_uid: uid, dashboard_title: title })}
+                  onChange={(uid, title) => {
+                    setFormData({ ...formData, dashboard_uid: uid, dashboard_title: title });
+                    loadDashboardVariables(uid);
+                  }}
                 />
               </Field>
 

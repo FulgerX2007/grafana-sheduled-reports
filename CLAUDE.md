@@ -105,6 +105,16 @@ All routes under `/api/<app-id>/`:
 
 ## Key Implementation Patterns
 
+### Dashboard Variable Auto-loading
+When a user selects a dashboard in the schedule editor:
+1. Frontend fetches dashboard definition via `/api/dashboards/uid/{uid}`
+2. Extracts template variables from `dashboard.templating.list`
+3. Filters out constant and datasource variables
+4. Auto-populates the variables editor with variable names and default values
+5. User can then modify values as needed before saving
+
+Implementation in `ScheduleEditPage.tsx:63-80`
+
 ### Rendering Flow
 1. Build render URL: `/render/d/<uid>?from=X&to=Y&var-foo=bar&kiosk=tv&orgId=N`
 2. Add service account token in Authorization header
