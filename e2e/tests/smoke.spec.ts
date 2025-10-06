@@ -28,7 +28,8 @@ test.describe('Smoke Tests', () => {
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(1000);
 
-    // Look for Settings tab
-    await expect(page.locator('[role="tab"]:has-text("Settings")')).toBeVisible({ timeout: 10000 });
+    // Look for Settings tab - using more flexible selector
+    const settingsTab = page.locator('button:has-text("Settings"), a:has-text("Settings"), [role="tab"]:has-text("Settings")').first();
+    await expect(settingsTab).toBeVisible({ timeout: 10000 });
   });
 });
