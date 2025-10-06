@@ -3,7 +3,8 @@ import { css } from '@emotion/css';
 import { GrafanaTheme2 } from '@grafana/data';
 import { useStyles2, Button, Icon, LoadingPlaceholder } from '@grafana/ui';
 import { Schedule } from '../../types/types';
-import { getBackendSrv } from '@grafana/runtime';
+import { getBackendSrv, getAppEvents } from '@grafana/runtime';
+import { AppEvents } from '@grafana/data';
 
 interface SchedulesPageProps {
   onNavigate: (page: string, id?: number) => void;
@@ -79,11 +80,19 @@ export const SchedulesPage: React.FC<SchedulesPageProps> = ({ onNavigate }) => {
   };
 
   const handleRunNow = async (id: number) => {
+    const appEvents = getAppEvents();
     try {
       await getBackendSrv().post(`/api/plugins/sheduled-reports-app/resources/api/schedules/${id}/run`);
-      alert('Report generation started');
+      appEvents.publish({
+        type: AppEvents.alertSuccess.name,
+        payload: ['Report generation started'],
+      });
     } catch (error) {
       console.error('Failed to run schedule:', error);
+      appEvents.publish({
+        type: AppEvents.alertError.name,
+        payload: ['Failed to run schedule'],
+      });
     }
   };
 

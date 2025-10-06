@@ -3,7 +3,8 @@ import { css } from '@emotion/css';
 import { GrafanaTheme2 } from '@grafana/data';
 import { useStyles2, Button, Field, Input, Switch, FieldSet, Form } from '@grafana/ui';
 import { Settings, SMTPConfig, RendererConfig, Limits } from '../../types/types';
-import { getBackendSrv } from '@grafana/runtime';
+import { getBackendSrv, getAppEvents } from '@grafana/runtime';
+import { AppEvents } from '@grafana/data';
 
 interface SettingsPageProps {
   onNavigate: (page: string) => void;
@@ -44,12 +45,19 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate }) => {
   };
 
   const handleSubmit = async () => {
+    const appEvents = getAppEvents();
     try {
       await getBackendSrv().post('/api/plugins/sheduled-reports-app/resources/api/settings', settings);
-      alert('Settings saved successfully');
+      appEvents.publish({
+        type: AppEvents.alertSuccess.name,
+        payload: ['Settings saved successfully'],
+      });
     } catch (error) {
       console.error('Failed to save settings:', error);
-      alert('Failed to save settings');
+      appEvents.publish({
+        type: AppEvents.alertError.name,
+        payload: ['Failed to save settings'],
+      });
     }
   };
 

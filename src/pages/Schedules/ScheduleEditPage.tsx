@@ -3,7 +3,8 @@ import { css } from '@emotion/css';
 import { GrafanaTheme2 } from '@grafana/data';
 import { useStyles2, Button, Field, Input, Select, Switch, TextArea, Form, FieldSet } from '@grafana/ui';
 import { ScheduleFormData } from '../../types/types';
-import { getBackendSrv } from '@grafana/runtime';
+import { getBackendSrv, getAppEvents } from '@grafana/runtime';
+import { AppEvents } from '@grafana/data';
 import { DashboardPicker } from '../../components/DashboardPicker';
 import { CronEditor } from '../../components/CronEditor';
 import { RecipientsEditor } from '../../components/RecipientsEditor';
@@ -60,6 +61,7 @@ export const ScheduleEditPage: React.FC<ScheduleEditPageProps> = ({ onNavigate, 
   };
 
   const handleSubmit = async () => {
+    const appEvents = getAppEvents();
     try {
       if (isNew) {
         await getBackendSrv().post('/api/plugins/sheduled-reports-app/resources/api/schedules', formData);
@@ -69,7 +71,10 @@ export const ScheduleEditPage: React.FC<ScheduleEditPageProps> = ({ onNavigate, 
       onNavigate('schedules');
     } catch (error) {
       console.error('Failed to save schedule:', error);
-      alert('Failed to save schedule');
+      appEvents.publish({
+        type: AppEvents.alertError.name,
+        payload: ['Failed to save schedule'],
+      });
     }
   };
 
