@@ -30,33 +30,38 @@ make install
 make build
 ```
 
-### 2. Start with Docker Compose
+### 2. Configure Environment Variables
+
+Copy the example environment file and configure your settings:
 
 ```bash
-docker-compose up -d
+cp .env.example .env
+```
+
+Edit `.env` and set:
+- `GF_PLUGIN_SA_TOKEN`: Your Grafana service account token (see step 3)
+- `GF_SMTP_HOST`, `GF_SMTP_USER`, `GF_SMTP_PASSWORD`: Your SMTP settings (optional)
+- `GF_SMTP_FROM_ADDRESS`, `GF_SMTP_FROM_NAME`: Email sender details (optional)
+
+### 3. Start with Docker Compose
+
+```bash
+docker compose up -d
 ```
 
 This will start:
 - Grafana on http://localhost:3000 (admin/admin)
 - Grafana Image Renderer on http://localhost:8081
 
-### 3. Create Service Account
+### 4. Create Service Account
 
 In Grafana:
 1. Go to Administration → Service Accounts
 2. Create a new service account named "reporting-plugin"
 3. Set role to "Viewer" (or higher if you need access to restricted dashboards)
 4. Generate a token and copy it
-
-### 4. Configure Plugin
-
-Set the service account token as an environment variable:
-
-```bash
-export GF_PLUGIN_SA_TOKEN="your-token-here"
-```
-
-Or add it to your `.env` file.
+5. Add the token to your `.env` file: `GF_PLUGIN_SA_TOKEN=your-token-here`
+6. Restart containers: `docker compose restart`
 
 ### 5. Enable Plugin
 
