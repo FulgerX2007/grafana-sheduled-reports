@@ -8,7 +8,10 @@ export const DocumentationPage: React.FC = () => {
 
   return (
     <div className={styles.container}>
-      <h1>Scheduled Reports Documentation</h1>
+      <div className={styles.header}>
+        <img src="public/plugins/grafana-app-reporting/img/logo.png" alt="Scheduled Reports" className={styles.logo} />
+        <h1>Scheduled Reports Documentation</h1>
+      </div>
 
       <section className={styles.section}>
         <h2>Overview</h2>
@@ -306,6 +309,28 @@ const getStyles = (theme: GrafanaTheme2) => ({
       border-bottom: 2px solid ${theme.colors.border.medium};
       padding-bottom: ${theme.spacing(2)};
     }
+  `,
+  header: css`
+    display: flex;
+    align-items: center;
+    gap: ${theme.spacing(2)};
+    margin-bottom: ${theme.spacing(3)};
+    border-bottom: 2px solid ${theme.colors.border.medium};
+    padding-bottom: ${theme.spacing(2)};
+
+    h1 {
+      margin: 0;
+      border: none;
+      padding: 0;
+    }
+  `,
+  logo: css`
+    width: 64px;
+    height: 64px;
+    object-fit: contain;
+  `,
+  section: css`
+    margin-bottom: ${theme.spacing(4)};
 
     h2 {
       margin-top: ${theme.spacing(4)};
@@ -371,9 +396,6 @@ const getStyles = (theme: GrafanaTheme2) => ({
       padding: ${theme.spacing(1)} ${theme.spacing(2)};
       border-bottom: 1px solid ${theme.colors.border.weak};
     }
-  `,
-  section: css`
-    margin-bottom: ${theme.spacing(4)};
   `,
   codeBlock: css`
     background: ${theme.colors.background.secondary};
