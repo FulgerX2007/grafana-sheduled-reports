@@ -101,6 +101,14 @@ export const ScheduleEditPage: React.FC<ScheduleEditPageProps> = ({ onNavigate, 
     <div className={styles.container}>
       <div className={styles.header}>
         <h2>{isNew ? 'New Schedule' : 'Edit Schedule'}</h2>
+        {/* @ts-ignore */}
+        <Button
+          variant="secondary"
+          icon="arrow-left"
+          onClick={() => onNavigate('schedules')}
+        >
+          Back to Schedules
+        </Button>
       </div>
 
       <Form onSubmit={handleSubmit}>
@@ -237,9 +245,11 @@ export const ScheduleEditPage: React.FC<ScheduleEditPageProps> = ({ onNavigate, 
 const getStyles = (theme: GrafanaTheme2) => ({
   container: css`
     padding: ${theme.spacing(2)};
-    max-width: 1200px;
   `,
   header: css`
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     margin-bottom: ${theme.spacing(3)};
   `,
   actions: css`

@@ -10,7 +10,7 @@
       "url": "https://github.com/FulgerX2007/"
     },
     "keywords": ["reporting", "pdf", "email", "scheduler"],
-    "version": "1.0.0",
+    "version": "0.0.1",
     "updated": "%TODAY%",
     "logos": {
       "small": "img/logo.png",
@@ -32,6 +32,34 @@
       "role": "Editor",
       "addToNav": true,
       "defaultNav": true
+    },
+    {
+      "type": "page",
+      "name": "Create Schedule",
+      "path": "/a/sheduled-reports-app/schedule/new",
+      "role": "Editor",
+      "addToNav": true
+    },
+    {
+      "type": "page",
+      "name": "Edit Schedule",
+      "path": "/a/sheduled-reports-app/schedule/edit",
+      "role": "Editor",
+      "addToNav": false
+    },
+    {
+      "type": "page",
+      "name": "Run History",
+      "path": "/a/sheduled-reports-app/history",
+      "role": "Editor",
+      "addToNav": true
+    },
+    {
+      "type": "page",
+      "name": "Documentation",
+      "path": "/a/sheduled-reports-app/documentation",
+      "role": "Viewer",
+      "addToNav": true
     },
     {
       "type": "page",

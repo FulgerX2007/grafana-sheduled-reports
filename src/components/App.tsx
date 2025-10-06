@@ -16,8 +16,23 @@ export const App: React.FC<AppRootProps> = (props) => {
   // Check URL path to determine initial page
   useEffect(() => {
     const path = props.path || '';
+    const urlParams = new URLSearchParams(window.location.search);
+    const scheduleIdParam = urlParams.get('scheduleId');
+
+    if (scheduleIdParam) {
+      setSelectedScheduleId(parseInt(scheduleIdParam, 10));
+    }
+
     if (path.includes('settings')) {
       setCurrentPage('settings');
+    } else if (path.includes('documentation')) {
+      setCurrentPage('documentation');
+    } else if (path.includes('schedule/new')) {
+      setCurrentPage('schedule-new');
+    } else if (path.includes('schedule/edit')) {
+      setCurrentPage('schedule-edit');
+    } else if (path.includes('history')) {
+      setCurrentPage('run-history');
     } else if (path.includes('documentation')) {
       setCurrentPage('documentation');
     } else {
@@ -26,10 +41,32 @@ export const App: React.FC<AppRootProps> = (props) => {
   }, [props.path]);
 
   const navigate = (page: Page, scheduleId?: number) => {
-    setCurrentPage(page);
-    if (scheduleId) {
-      setSelectedScheduleId(scheduleId);
+    // Navigate to the proper URL for each page
+    const baseUrl = '/a/sheduled-reports-app';
+    let url = baseUrl;
+
+    switch (page) {
+      case 'schedules':
+        url = baseUrl;
+        break;
+      case 'schedule-new':
+        url = `${baseUrl}/schedule/new`;
+        break;
+      case 'schedule-edit':
+        url = `${baseUrl}/schedule/edit?scheduleId=${scheduleId}`;
+        break;
+      case 'run-history':
+        url = `${baseUrl}/history?scheduleId=${scheduleId}`;
+        break;
+      case 'settings':
+        url = `${baseUrl}/settings`;
+        break;
+      case 'documentation':
+        url = `${baseUrl}/documentation`;
+        break;
     }
+
+    window.location.href = url;
   };
 
   const renderPage = () => {
@@ -51,36 +88,9 @@ export const App: React.FC<AppRootProps> = (props) => {
     }
   };
 
-  // Show tabs only on main pages (not on edit/new/history pages)
-  const showTabs = currentPage === 'schedules' || currentPage === 'settings' || currentPage === 'documentation';
-
   return (
     <div>
-      {showTabs && (
-        <TabsBar>
-          {/* @ts-ignore */}
-          <Tab
-            label="Schedules"
-            active={currentPage === 'schedules'}
-            onChangeTab={() => navigate('schedules')}
-          />
-          {/* @ts-ignore */}
-          <Tab
-            label="Documentation"
-            active={currentPage === 'documentation'}
-            onChangeTab={() => navigate('documentation')}
-          />
-          {/* @ts-ignore */}
-          <Tab
-            label="Settings"
-            active={currentPage === 'settings'}
-            onChangeTab={() => navigate('settings')}
-          />
-        </TabsBar>
-      )}
-      <div style={{ padding: showTabs ? '0' : '16px' }}>
-        {renderPage()}
-      </div>
+      {renderPage()}
     </div>
   );
 };
