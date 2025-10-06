@@ -4,11 +4,14 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"time"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/yourusername/sheduled-reports-app/pkg/model"
 )
 
@@ -16,17 +19,15 @@ import (
 type Renderer struct {
 	grafanaURL  string
 	rendererURL string
-	saToken     string
 	config      model.RendererConfig
 	client      *http.Client
 }
 
 // NewRenderer creates a new renderer instance
-func NewRenderer(grafanaURL, saToken string, config model.RendererConfig) *Renderer {
+func NewRenderer(grafanaURL string, config model.RendererConfig) *Renderer {
 	return &Renderer{
 		grafanaURL:  grafanaURL,
 		rendererURL: config.URL,
-		saToken:     saToken,
 		config:      config,
 		client: &http.Client{
 			Timeout: time.Duration(config.TimeoutMS) * time.Millisecond,
@@ -34,33 +35,69 @@ func NewRenderer(grafanaURL, saToken string, config model.RendererConfig) *Rende
 	}
 }
 
+// getServiceAccountToken retrieves the service account token from context or environment
+func getServiceAccountToken(ctx context.Context) (string, error) {
+	// Try to get token from Grafana config (for managed service accounts in Grafana 10.3+)
+	cfg := backend.GrafanaConfigFromContext(ctx)
+	if cfg != nil {
+		token, err := cfg.PluginAppClientSecret()
+		if err == nil && token != "" {
+			return token, nil
+		}
+		if err != nil {
+			log.Printf("Warning: Failed to get managed service account token: %v", err)
+		}
+	}
+
+	// Fallback to environment variable for backwards compatibility
+	token := os.Getenv("GF_PLUGIN_SA_TOKEN")
+	if token == "" {
+		return "", fmt.Errorf("no service account token available: neither managed service account nor GF_PLUGIN_SA_TOKEN environment variable is set")
+	}
+
+	return token, nil
+}
+
 // RenderDashboard renders a dashboard to PNG
 func (r *Renderer) RenderDashboard(ctx context.Context, schedule *model.Schedule) ([]byte, error) {
+	// Get service account token from context
+	saToken, err := getServiceAccountToken(ctx)
+	if err != nil {
+		log.Printf("Warning: Failed to get service account token: %v", err)
+		log.Printf("Rendering may fail without authentication")
+	}
+
 	// Use Grafana's render API instead of calling renderer directly
 	renderURL, err := r.buildGrafanaRenderURL(schedule)
 	if err != nil {
 		return nil, fmt.Errorf("failed to build render URL: %w", err)
 	}
 
-	fmt.Printf("DEBUG: Grafana Render URL: %s\n", renderURL)
-	fmt.Printf("DEBUG: Has token: %v (length: %d)\n", r.saToken != "", len(r.saToken))
+	log.Printf("DEBUG: Grafana Render URL: %s", renderURL)
+	log.Printf("DEBUG: Has token from context: %v (length: %d)", saToken != "", len(saToken))
 
 	// Add delay before rendering to let queries finish
 	if r.config.DelayMS > 0 {
 		time.Sleep(time.Duration(r.config.DelayMS) * time.Millisecond)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "GET", renderURL, nil)
+	// Create a new context with timeout for the HTTP request
+	// Don't use the Grafana config context directly as it may have a short timeout
+	requestCtx, cancel := context.WithTimeout(context.Background(), time.Duration(r.config.TimeoutMS)*time.Millisecond)
+	defer cancel()
+
+	req, err := http.NewRequest("GET", renderURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
+	req = req.WithContext(requestCtx)
 
 	// Add auth token for Grafana
-	if r.saToken != "" {
-		req.Header.Set("Authorization", "Bearer "+r.saToken)
-		fmt.Printf("DEBUG: Added Authorization header\n")
+	if saToken != "" {
+		req.Header.Set("Authorization", "Bearer "+saToken)
+		log.Printf("DEBUG: Added Authorization header with token from managed service account")
 	} else {
-		fmt.Printf("DEBUG: No token available\n")
+		log.Printf("DEBUG: No token available from managed service account")
 	}
 
 	resp, err := r.client.Do(req)
@@ -167,11 +204,6 @@ func (r *Renderer) buildRendererURL(dashboardURL string) (string, error) {
 	q.Set("height", strconv.Itoa(r.config.ViewportHeight))
 	q.Set("deviceScaleFactor", "1")
 	q.Set("timeout", strconv.Itoa(r.config.TimeoutMS/1000)) // Convert to seconds
-
-	// Pass authorization token for renderer to use when accessing Grafana
-	if r.saToken != "" {
-		q.Set("token", r.saToken)
-	}
 
 	u.RawQuery = q.Encode()
 

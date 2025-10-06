@@ -60,5 +60,21 @@
       "method": "*",
       "reqRole": "Editor"
     }
-  ]
+  ],
+  "iam": {
+    "permissions": [
+      {
+        "action": "datasources:query",
+        "scope": "datasources:*"
+      },
+      {
+        "action": "dashboards:read",
+        "scope": "dashboards:*"
+      },
+      {
+        "action": "folders:read",
+        "scope": "folders:*"
+      }
+    ]
+  }
 }

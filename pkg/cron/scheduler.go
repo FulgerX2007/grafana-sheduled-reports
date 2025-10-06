@@ -24,21 +24,26 @@ type Scheduler struct {
 	store         *store.Store
 	cron          *cron.Cron
 	grafanaURL    string
-	saToken       string
 	artifactsPath string
 	workerPool    chan struct{}
+	baseCtx       context.Context // Context with Grafana config for background jobs
 }
 
 // NewScheduler creates a new scheduler instance
-func NewScheduler(st *store.Store, grafanaURL, saToken, artifactsPath string, maxConcurrent int) *Scheduler {
+func NewScheduler(st *store.Store, grafanaURL, artifactsPath string, maxConcurrent int) *Scheduler {
 	return &Scheduler{
 		store:         st,
 		cron:          cron.New(cron.WithSeconds()),
 		grafanaURL:    grafanaURL,
-		saToken:       saToken,
 		artifactsPath: artifactsPath,
 		workerPool:    make(chan struct{}, maxConcurrent),
+		baseCtx:       context.Background(), // Will be updated when plugin starts
 	}
+}
+
+// SetContext sets the base context for the scheduler (should be called on plugin initialization)
+func (s *Scheduler) SetContext(ctx context.Context) {
+	s.baseCtx = ctx
 }
 
 // Start starts the scheduler
@@ -159,7 +164,8 @@ func (s *Scheduler) executeWithRetry(schedule *model.Schedule, run *model.Run, m
 
 // executeScheduleOnce executes a schedule once
 func (s *Scheduler) executeScheduleOnce(schedule *model.Schedule, run *model.Run) error {
-	ctx := context.Background()
+	// Use the base context which has Grafana config
+	ctx := s.baseCtx
 
 	// Get settings
 	settings, err := s.store.GetSettings(schedule.OrgID)
@@ -170,15 +176,10 @@ func (s *Scheduler) executeScheduleOnce(schedule *model.Schedule, run *model.Run
 		return fmt.Errorf("no settings configured for org %d", schedule.OrgID)
 	}
 
-	// Debug: Log token info
-	tokenInfo := "empty"
-	if s.saToken != "" {
-		tokenInfo = fmt.Sprintf("set (length: %d)", len(s.saToken))
-	}
-	log.Printf("DEBUG: Rendering with grafanaURL=%s, saToken=%s, rendererURL=%s", s.grafanaURL, tokenInfo, settings.RendererConfig.URL)
+	log.Printf("DEBUG: Rendering with grafanaURL=%s, rendererURL=%s (using managed service account)", s.grafanaURL, settings.RendererConfig.URL)
 
-	// Render dashboard
-	renderer := render.NewRenderer(s.grafanaURL, s.saToken, settings.RendererConfig)
+	// Render dashboard (token will be retrieved from context inside renderer)
+	renderer := render.NewRenderer(s.grafanaURL, settings.RendererConfig)
 	imageData, err := renderer.RenderDashboard(ctx, schedule)
 	if err != nil {
 		return fmt.Errorf("failed to render dashboard: %w", err)

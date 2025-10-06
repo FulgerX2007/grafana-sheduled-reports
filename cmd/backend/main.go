@@ -43,10 +43,8 @@ func run() error {
 		grafanaURL = "http://localhost:3000"
 	}
 
-	saToken := os.Getenv("GF_PLUGIN_SA_TOKEN")
-	if saToken == "" {
-		log.Println("Warning: GF_PLUGIN_SA_TOKEN not set. Rendering may fail.")
-	}
+	log.Println("Using Grafana-managed service account for authentication")
+	log.Println("Token will be retrieved automatically from plugin context")
 
 	// Create artifacts directory
 	artifactsPath := filepath.Join(dataPath, "artifacts")
@@ -54,9 +52,9 @@ func run() error {
 		return err
 	}
 
-	// Initialize scheduler
+	// Initialize scheduler (token will be retrieved from context on first API call)
 	maxConcurrent := 5 // Default max concurrent renders
-	scheduler := cron.NewScheduler(st, grafanaURL, saToken, artifactsPath, maxConcurrent)
+	scheduler := cron.NewScheduler(st, grafanaURL, artifactsPath, maxConcurrent)
 
 	// Start scheduler
 	if err := scheduler.Start(); err != nil {

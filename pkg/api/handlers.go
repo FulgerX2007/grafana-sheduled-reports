@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -18,17 +19,19 @@ import (
 
 // Handler handles HTTP API requests
 type Handler struct {
-	store     *store.Store
-	scheduler *cron.Scheduler
-	mux       *http.ServeMux
+	store         *store.Store
+	scheduler     *cron.Scheduler
+	mux           *http.ServeMux
+	contextCached bool
 }
 
 // NewHandler creates a new API handler
 func NewHandler(st *store.Store, scheduler *cron.Scheduler) *Handler {
 	h := &Handler{
-		store:     st,
-		scheduler: scheduler,
-		mux:       http.NewServeMux(),
+		store:         st,
+		scheduler:     scheduler,
+		mux:           http.NewServeMux(),
+		contextCached: false,
 	}
 
 	h.registerRoutes()
@@ -45,6 +48,14 @@ func (h *Handler) registerRoutes() {
 
 // CallResource implements backend.CallResourceHandler
 func (h *Handler) CallResource(ctx context.Context, req *backend.CallResourceRequest, sender backend.CallResourceResponseSender) error {
+	// Cache the Grafana config context for background scheduler jobs
+	// Only do this once on first request
+	if !h.contextCached {
+		h.scheduler.SetContext(ctx)
+		h.contextCached = true
+		log.Println("Cached Grafana config context for scheduler")
+	}
+
 	adapter := httpadapter.New(h.mux)
 	return adapter.CallResource(ctx, req, sender)
 }

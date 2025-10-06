@@ -11,6 +11,9 @@ services:
       GF_DEFAULT_APP_MODE: development
       GF_PLUGIN_APP_DATA_PATH: /var/lib/grafana/plugin-data
       GF_INSTALL_PLUGINS: ""
+      # Enable managed service accounts for app plugins (Grafana 10.3+)
+      GF_FEATURE_TOGGLES_ENABLE: externalServiceAccounts
+      GF_AUTH_MANAGED_SERVICE_ACCOUNTS_ENABLED: true
       NO_PROXY: "localhost,127.0.0.1,localaddress,.localdomain.com,10.233.1.0/24,renderer,grafana"
       no_proxy: "localhost,127.0.0.1,localaddress,.localdomain.com,10.233.1.0/24,renderer,grafana"
       GF_SMTP_ENABLED: true
@@ -20,7 +23,7 @@ services:
       GF_SMTP_FROM_ADDRESS: ${GF_SMTP_FROM_ADDRESS:-noreply@example.com}
       GF_SMTP_FROM_NAME: ${GF_SMTP_FROM_NAME:-Grafana Reports}
       GF_SMTP_SKIP_VERIFY: true
-      GF_PLUGIN_SA_TOKEN: ${GF_PLUGIN_SA_TOKEN:-}
+      # GF_PLUGIN_SA_TOKEN: ${GF_PLUGIN_SA_TOKEN:-}
     volumes:
       - ./dist:/var/lib/grafana/plugins/sheduled-reports-app
       - grafana-storage:/var/lib/grafana
