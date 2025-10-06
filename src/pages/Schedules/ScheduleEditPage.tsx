@@ -189,6 +189,7 @@ export const ScheduleEditPage: React.FC<ScheduleEditPageProps> = ({ onNavigate, 
               <VariablesEditor
                 value={formData.variables || {}}
                 onChange={(vars) => setFormData({ ...formData, variables: vars })}
+                readOnlyKeys={true}
               />
             </FieldSet>
 

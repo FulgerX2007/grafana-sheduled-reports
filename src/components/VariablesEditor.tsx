@@ -7,9 +7,10 @@ import { useStyles2 } from '@grafana/ui';
 interface VariablesEditorProps {
   value: Record<string, string>;
   onChange: (value: Record<string, string>) => void;
+  readOnlyKeys?: boolean; // When true, variable names are read-only and add/remove buttons are hidden
 }
 
-export const VariablesEditor: React.FC<VariablesEditorProps> = ({ value, onChange }) => {
+export const VariablesEditor: React.FC<VariablesEditorProps> = ({ value, onChange, readOnlyKeys = false }) => {
   const styles = useStyles2(getStyles);
   const entries = Object.entries(value);
 
@@ -37,31 +38,36 @@ export const VariablesEditor: React.FC<VariablesEditorProps> = ({ value, onChang
 
   return (
     <div>
-      <div className={styles.header}>
+      <div className={readOnlyKeys ? styles.headerReadOnly : styles.header}>
         <span>Variable Name</span>
         <span>Value</span>
-        <span></span>
+        {!readOnlyKeys && <span></span>}
       </div>
       {entries.map(([key, val], index) => (
-        <div key={index} className={styles.row}>
+        <div key={index} className={readOnlyKeys ? styles.rowReadOnly : styles.row}>
           <Input
             value={key}
             onChange={(e) => updateKey(key, e.currentTarget.value)}
             placeholder="variable_name"
+            disabled={readOnlyKeys}
           />
           <Input
             value={val}
             onChange={(e) => updateValue(key, e.currentTarget.value)}
             placeholder="value"
           />
-              {/* @ts-ignore */}
-          <Button size="sm" variant="secondary" icon="trash-alt" onClick={() => removeVariable(key)} />
+          {!readOnlyKeys && (
+            // @ts-ignore
+            <Button size="sm" variant="secondary" icon="trash-alt" onClick={() => removeVariable(key)} />
+          )}
         </div>
       ))}
-              {/* @ts-ignore */}
-      <Button size="sm" variant="secondary" icon="plus" onClick={addVariable}>
-        Add Variable
-      </Button>
+      {!readOnlyKeys && (
+        // @ts-ignore
+        <Button size="sm" variant="secondary" icon="plus" onClick={addVariable}>
+          Add Variable
+        </Button>
+      )}
     </div>
   );
 };
@@ -74,9 +80,22 @@ const getStyles = (theme: GrafanaTheme2) => ({
     margin-bottom: ${theme.spacing(1)};
     font-weight: ${theme.typography.fontWeightMedium};
   `,
+  headerReadOnly: css`
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: ${theme.spacing(1)};
+    margin-bottom: ${theme.spacing(1)};
+    font-weight: ${theme.typography.fontWeightMedium};
+  `,
   row: css`
     display: grid;
     grid-template-columns: 1fr 1fr 40px;
+    gap: ${theme.spacing(1)};
+    margin-bottom: ${theme.spacing(1)};
+  `,
+  rowReadOnly: css`
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: ${theme.spacing(1)};
     margin-bottom: ${theme.spacing(1)};
   `,
