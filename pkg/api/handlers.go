@@ -8,7 +8,9 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/resource/httpadapter"
@@ -210,6 +212,13 @@ func (h *Handler) handleRun(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		// Get schedule to retrieve the name
+		_, err = h.store.GetSchedule(orgID, run.ScheduleID)
+		if err != nil {
+			http.Error(w, "Schedule not found", http.StatusNotFound)
+			return
+		}
+
 		file, err := os.Open(run.ArtifactPath)
 		if err != nil {
 			http.Error(w, "Failed to open artifact", http.StatusInternalServerError)
@@ -219,12 +228,23 @@ func (h *Handler) handleRun(w http.ResponseWriter, r *http.Request) {
 
 		// Set content type based on file extension
 		contentType := "application/pdf"
-		if run.ArtifactPath[len(run.ArtifactPath)-4:] == ".png" {
+		if len(run.ArtifactPath) >= 4 && run.ArtifactPath[len(run.ArtifactPath)-4:] == ".png" {
 			contentType = "image/png"
 		}
 
+		// Extract just the filename from the full path
+		// The artifact path looks like: /var/lib/grafana/plugin-data/artifacts/org_1/test 2-2025-10-06-173548.pdf
+		// We want: test_2-2025-10-06-173548.pdf
+		filename := filepath.Base(run.ArtifactPath)
+		log.Printf("Original artifact path: %s", run.ArtifactPath)
+		log.Printf("Extracted filename: %s", filename)
+
+		// Replace all spaces with underscores
+		filename = strings.ReplaceAll(filename, " ", "_")
+		log.Printf("Final filename: %s", filename)
+
 		w.Header().Set("Content-Type", contentType)
-		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", run.ArtifactPath))
+		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
 		io.Copy(w, file)
 		return
 	}

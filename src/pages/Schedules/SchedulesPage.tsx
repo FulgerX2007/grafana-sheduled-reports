@@ -15,6 +15,7 @@ export const SchedulesPage: React.FC<SchedulesPageProps> = ({ onNavigate }) => {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [loading, setLoading] = useState(true);
   const [dashboardFolders, setDashboardFolders] = useState<Record<string, string>>({});
+  const [latestRuns, setLatestRuns] = useState<Record<number, any>>({});
 
   useEffect(() => {
     loadSchedules();
@@ -41,9 +42,12 @@ export const SchedulesPage: React.FC<SchedulesPageProps> = ({ onNavigate }) => {
 
       setSchedules(schedulesData);
 
-      // Fetch folder information for all dashboards
+      // Fetch folder information and latest runs for all schedules
       const folders: Record<string, string> = {};
+      const runs: Record<number, any> = {};
+
       for (const schedule of schedulesData) {
+        // Fetch folder info
         if (schedule.dashboard_uid) {
           try {
             const dashboards = await getBackendSrv().get('/api/search', {
@@ -57,8 +61,29 @@ export const SchedulesPage: React.FC<SchedulesPageProps> = ({ onNavigate }) => {
             console.error(`Failed to load folder for dashboard ${schedule.dashboard_uid}:`, error);
           }
         }
+
+        // Fetch latest run
+        try {
+          const runsResponse = await getBackendSrv().get(
+            `/api/plugins/sheduled-reports-app/resources/api/schedules/${schedule.id}/runs`
+          );
+          const scheduleRuns = runsResponse.runs || [];
+          if (scheduleRuns.length > 0) {
+            // Get the most recent completed run with an artifact
+            const completedRun = scheduleRuns.find(
+              (run: any) => run.status === 'completed' && run.artifact_path
+            );
+            if (completedRun) {
+              runs[schedule.id] = completedRun;
+            }
+          }
+        } catch (error) {
+          console.error(`Failed to load runs for schedule ${schedule.id}:`, error);
+        }
       }
+
       setDashboardFolders(folders);
+      setLatestRuns(runs);
     } catch (error) {
       console.error('Failed to load schedules:', error);
       setSchedules([]);
@@ -108,6 +133,10 @@ export const SchedulesPage: React.FC<SchedulesPageProps> = ({ onNavigate }) => {
     }
   };
 
+  const downloadArtifact = (runId: number) => {
+    window.open(`/api/plugins/sheduled-reports-app/resources/api/runs/${runId}/artifact`, '_blank');
+  };
+
   if (loading) {
     return <LoadingPlaceholder text="Loading schedules..." />;
   }
@@ -151,6 +180,7 @@ export const SchedulesPage: React.FC<SchedulesPageProps> = ({ onNavigate }) => {
               <th style={{ textAlign: 'left', padding: '8px', borderBottom: '2px solid #ddd' }}>Format</th>
               <th style={{ textAlign: 'left', padding: '8px', borderBottom: '2px solid #ddd' }}>Status</th>
               <th style={{ textAlign: 'left', padding: '8px', borderBottom: '2px solid #ddd' }}>Next Run</th>
+              <th style={{ textAlign: 'left', padding: '8px', borderBottom: '2px solid #ddd' }}>Latest Report</th>
               <th style={{ textAlign: 'left', padding: '8px', borderBottom: '2px solid #ddd' }}>Actions</th>
             </tr>
           </thead>
@@ -187,6 +217,26 @@ export const SchedulesPage: React.FC<SchedulesPageProps> = ({ onNavigate }) => {
                 </td>
                 <td style={{ padding: '8px', borderBottom: '1px solid #eee' }}>
                   {schedule.next_run_at ? new Date(schedule.next_run_at).toLocaleString() : 'N/A'}
+                </td>
+                <td style={{ padding: '8px', borderBottom: '1px solid #eee' }}>
+                  {latestRuns[schedule.id] ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <span style={{ fontSize: '12px', color: '#888' }}>
+                        {new Date(latestRuns[schedule.id].started_at).toLocaleString()}
+                      </span>
+                      {/* @ts-ignore */}
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        icon="download-alt"
+                        onClick={() => downloadArtifact(latestRuns[schedule.id].id)}
+                      >
+                        Download
+                      </Button>
+                    </div>
+                  ) : (
+                    <span style={{ color: '#888' }}>No reports yet</span>
+                  )}
                 </td>
                 <td style={{ padding: '8px', borderBottom: '1px solid #eee' }}>
                   <div className={styles.actions}>
