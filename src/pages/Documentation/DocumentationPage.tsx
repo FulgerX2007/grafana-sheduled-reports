@@ -8,12 +8,12 @@ export const DocumentationPage: React.FC = () => {
 
   return (
     <div className={styles.container}>
-      <h1>Grafana Reporting Documentation</h1>
+      <h1>Scheduled Reports Documentation</h1>
 
       <section className={styles.section}>
         <h2>Overview</h2>
         <p>
-          The Grafana Reporting plugin allows you to schedule automatic generation and delivery of dashboard
+          The Scheduled Reports plugin allows you to schedule automatic generation and delivery of dashboard
           reports via email. Reports can be generated as PDF or HTML and sent on a daily, weekly, monthly,
           or custom cron schedule.
         </p>
@@ -261,7 +261,7 @@ export const DocumentationPage: React.FC = () => {
         <h2>Technical Details</h2>
 
         <h3>Architecture</h3>
-        <p>The reporting plugin consists of:</p>
+        <p>The Scheduled Reports plugin consists of:</p>
         <ul>
           <li><strong>Frontend:</strong> React-based UI for managing schedules</li>
           <li><strong>Backend:</strong> Go service for scheduling and report generation</li>
