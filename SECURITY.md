@@ -40,13 +40,14 @@ The repository now uses environment variables for sensitive data:
    cp .env.example .env
    ```
 
-2. Edit `.env` and add your actual credentials:
+2. Edit `.env` and add your actual SMTP credentials:
    ```
-   GF_PLUGIN_SA_TOKEN=your_actual_token_here
    GF_SMTP_PASSWORD=your_actual_password_here
    ```
 
 3. The `.env` file is in `.gitignore` and will never be committed.
+
+**Note**: Since Grafana 10.3+, the plugin uses managed service accounts for authentication. No manual service account token configuration is required.
 
 ## Never Commit Secrets
 

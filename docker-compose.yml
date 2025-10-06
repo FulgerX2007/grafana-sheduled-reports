@@ -23,7 +23,6 @@ services:
       GF_SMTP_FROM_ADDRESS: ${GF_SMTP_FROM_ADDRESS:-noreply@example.com}
       GF_SMTP_FROM_NAME: ${GF_SMTP_FROM_NAME:-Grafana Reports}
       GF_SMTP_SKIP_VERIFY: true
-      # GF_PLUGIN_SA_TOKEN: ${GF_PLUGIN_SA_TOKEN:-}
     volumes:
       - ./dist:/var/lib/grafana/plugins/sheduled-reports-app
       - grafana-storage:/var/lib/grafana

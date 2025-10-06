@@ -2,6 +2,14 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Important Guidelines
+
+**Git Commit Policy**:
+- **NEVER** commit changes automatically
+- **ONLY** create commits when explicitly requested by the user
+- **DO NOT** add AI attribution or Claude AI references in commit messages
+- Use semantic commit format when creating commits (feat:, fix:, refactor:, etc.)
+
 ## Repository Overview
 
 This is a Grafana App Plugin for scheduled dashboard reporting in Grafana OSS. It provides scheduled rendering of dashboards to PDF/HTML, email delivery, run history, and audit tracking - all managed through a UI.

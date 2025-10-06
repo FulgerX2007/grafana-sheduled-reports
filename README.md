@@ -18,7 +18,7 @@
 
 ## Prerequisites
 
-- Grafana 10.0 or higher
+- Grafana 10.3 or higher (for managed service accounts)
 - Grafana Image Renderer plugin or service
 - Go 1.21+ (for building)
 - Node.js 18+ (for building)
@@ -34,18 +34,17 @@ make install
 make build
 ```
 
-### 2. Configure Environment Variables
+### 2. Configure Environment Variables (Optional)
 
-Copy the example environment file and configure your settings:
+Copy the example environment file and configure SMTP settings if needed:
 
 ```bash
 cp .env.example .env
 ```
 
-Edit `.env` and set:
-- `GF_PLUGIN_SA_TOKEN`: Your Grafana service account token (see step 3)
-- `GF_SMTP_HOST`, `GF_SMTP_USER`, `GF_SMTP_PASSWORD`: Your SMTP settings (optional)
-- `GF_SMTP_FROM_ADDRESS`, `GF_SMTP_FROM_NAME`: Email sender details (optional)
+Edit `.env` and set (optional):
+- `GF_SMTP_HOST`, `GF_SMTP_USER`, `GF_SMTP_PASSWORD`: Your SMTP settings
+- `GF_SMTP_FROM_ADDRESS`, `GF_SMTP_FROM_NAME`: Email sender details
 
 ### 3. Start with Docker Compose
 
@@ -57,22 +56,14 @@ This will start:
 - Grafana on http://localhost:3000 (admin/admin)
 - Grafana Image Renderer on http://localhost:8081
 
-### 4. Create Service Account
-
-In Grafana:
-1. Go to Administration → Service Accounts
-2. Create a new service account named "reporting-plugin"
-3. Set role to "Viewer" (or higher if you need access to restricted dashboards)
-4. Generate a token and copy it
-5. Add the token to your `.env` file: `GF_PLUGIN_SA_TOKEN=your-token-here`
-6. Restart containers: `docker compose restart`
-
-### 5. Enable Plugin
+### 4. Enable Plugin
 
 In Grafana:
 1. Go to Administration → Plugins
-2. Find "Reporting" in the list
+2. Find "Scheduled Reports" in the list
 3. Click "Enable"
+
+The plugin automatically uses Grafana's managed service accounts for authentication (Grafana 10.3+). No manual token configuration is required.
 
 ## Development
 
@@ -201,19 +192,19 @@ Create a `.env` file based on `.env.example`:
 ```bash
 # Grafana Configuration
 GF_GRAFANA_URL=http://localhost:3000
-GF_PLUGIN_SA_TOKEN=your-service-account-token
 
 # Plugin Data Path (where SQLite DB and artifacts are stored)
 GF_PLUGIN_APP_DATA_PATH=./data
 
 # SMTP Configuration (optional if using Grafana's SMTP)
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USERNAME=your-email@gmail.com
-SMTP_PASSWORD=your-app-password
-SMTP_FROM=noreply@example.com
-SMTP_USE_TLS=true
+GF_SMTP_HOST=smtp.gmail.com:587
+GF_SMTP_USER=your-email@gmail.com
+GF_SMTP_PASSWORD=your-app-password
+GF_SMTP_FROM_ADDRESS=noreply@example.com
+GF_SMTP_FROM_NAME=Grafana Reports
 ```
+
+**Authentication**: The plugin uses Grafana's managed service accounts (Grafana 10.3+). No manual token configuration required.
 
 ### Plugin Settings
 
@@ -300,7 +291,7 @@ Use these placeholders in email subject and body:
 
 **Solutions**:
 - Ensure grafana-image-renderer is running and accessible
-- Check service account token has proper permissions
+- Verify the managed service account has proper dashboard permissions
 - Increase render timeout in Settings
 - Add render delay for heavy dashboards
 
@@ -329,8 +320,8 @@ Use these placeholders in email subject and body:
 **Problem**: Cannot access certain dashboards
 
 **Solutions**:
-- Ensure service account has access to dashboard folders
-- Upgrade service account role if needed
+- The managed service account automatically has permissions defined in plugin.json
+- Ensure dashboards are not in restricted folders
 - Check organization ID matches
 
 ## Production Deployment
@@ -363,7 +354,7 @@ make dist  # Creates distribution zip
 
 ### Recommended Settings
 
-- Use a dedicated service account with minimal permissions
+- Enable managed service accounts feature in Grafana 10.3+
 - Configure rate limits to prevent abuse
 - Set up artifact retention to manage disk space
 - Use TLS for SMTP connections
