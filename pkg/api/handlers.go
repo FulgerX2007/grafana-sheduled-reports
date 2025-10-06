@@ -72,6 +72,10 @@ func (h *Handler) handleSchedules(w http.ResponseWriter, r *http.Request) {
 		schedule.OrgID = orgID
 		schedule.OwnerUserID = getUserID(r)
 
+		// Calculate and set next run time
+		nextRun := h.scheduler.CalculateNextRun(&schedule)
+		schedule.NextRunAt = &nextRun
+
 		if err := h.store.CreateSchedule(&schedule); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -145,6 +149,10 @@ func (h *Handler) handleSchedule(w http.ResponseWriter, r *http.Request) {
 
 		schedule.ID = scheduleID
 		schedule.OrgID = orgID
+
+		// Recalculate next run time if interval or cron expression changed
+		nextRun := h.scheduler.CalculateNextRun(&schedule)
+		schedule.NextRunAt = &nextRun
 
 		if err := h.store.UpdateSchedule(&schedule); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)

@@ -289,6 +289,11 @@ func (s *Scheduler) executeScheduleOnce(schedule *model.Schedule, run *model.Run
 	return nil
 }
 
+// CalculateNextRun calculates the next run time for a schedule (exported for use in handlers)
+func (s *Scheduler) CalculateNextRun(schedule *model.Schedule) time.Time {
+	return s.calculateNextRun(schedule)
+}
+
 // calculateNextRun calculates the next run time for a schedule
 func (s *Scheduler) calculateNextRun(schedule *model.Schedule) time.Time {
 	now := time.Now()

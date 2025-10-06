@@ -123,13 +123,13 @@ func (s *Store) CreateSchedule(schedule *model.Schedule) error {
 			org_id, name, dashboard_uid, dashboard_title, panel_ids, range_from, range_to,
 			interval_type, cron_expr, timezone, format, variables, recipients,
 			email_subject, email_body, template_id, enabled, owner_user_id,
-			created_at, updated_at
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			next_run_at, created_at, updated_at
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		schedule.OrgID, schedule.Name, schedule.DashboardUID, schedule.DashboardTitle,
 		schedule.PanelIDs, schedule.RangeFrom, schedule.RangeTo, schedule.IntervalType,
 		schedule.CronExpr, schedule.Timezone, schedule.Format, schedule.Variables,
 		schedule.Recipients, schedule.EmailSubject, schedule.EmailBody, schedule.TemplateID,
-		schedule.Enabled, schedule.OwnerUserID, now, now,
+		schedule.Enabled, schedule.OwnerUserID, schedule.NextRunAt, now, now,
 	)
 	if err != nil {
 		return err
