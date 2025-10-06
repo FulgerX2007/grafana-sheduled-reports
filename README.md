@@ -1,6 +1,10 @@
-# Grafana Reporting Plugin
+<div align="center">
+  <img src="src/img/logo.png" alt="Scheduled Reports Logo" width="200"/>
 
-A Grafana app plugin for scheduling and emailing dashboard reports as PDF or HTML files.
+  # Scheduled Reports
+
+  A Grafana app plugin for scheduling and emailing dashboard reports as PDF or HTML files.
+</div>
 
 ## Features
 
