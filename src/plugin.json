@@ -74,6 +74,10 @@
       {
         "action": "folders:read",
         "scope": "folders:*"
+      },
+      {
+        "action": "annotations:read",
+        "scope": "annotations:*"
       }
     ]
   }
