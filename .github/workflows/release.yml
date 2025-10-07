@@ -56,74 +56,100 @@ jobs:
           CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -o ../../dist/gpx_reporting_darwin_arm64
           chmod +x ../../dist/gpx_reporting_darwin_arm64
 
-      - name: Prepare plugin package
+      - name: Sign and package plugin for Linux (amd64)
         run: |
-          # Create package directory
-          mkdir -p package/sheduled-reports-app
+          # Copy the platform-specific backend binary to dist
+          cp dist/gpx_reporting_linux_amd64 dist/gpx_reporting
+          chmod +x dist/gpx_reporting
 
-          # Copy frontend build artifacts
-          cp -r dist/* package/sheduled-reports-app/
-
-          # Copy plugin metadata
-          cp src/plugin.json package/sheduled-reports-app/
-
-          # Copy README if exists
-          [ -f README.md ] && cp README.md package/sheduled-reports-app/ || true
-
-          # Copy LICENSE if exists
-          [ -f LICENSE ] && cp LICENSE package/sheduled-reports-app/ || true
-
-      - name: Sign plugin for Linux (amd64)
-        run: |
-          cd package
-          cp sheduled-reports-app/gpx_reporting_linux_amd64 sheduled-reports-app/gpx_reporting
+          # Sign the plugin (signs the dist/ directory)
           npx --yes @grafana/sign-plugin@latest --rootUrls https://grafana.com
-          mv sheduled-reports-app sheduled-reports-app-linux-amd64
-          cp -r sheduled-reports-app-linux-amd64 sheduled-reports-app
-          rm sheduled-reports-app/gpx_reporting
+
+          # Create platform-specific package directory
+          mkdir -p ci/packages/sheduled-reports-app
+          cp -r dist/* ci/packages/sheduled-reports-app/
+
+          # Create archive
+          cd ci/packages
+          zip -r ../../sheduled-reports-app-linux-amd64.zip sheduled-reports-app
+
+          # Clean up for next platform
+          cd ../..
+          rm -rf ci/packages
+          rm dist/gpx_reporting
         env:
           GRAFANA_ACCESS_POLICY_TOKEN: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
 
-      - name: Sign plugin for Linux (arm64)
+      - name: Sign and package plugin for Linux (arm64)
         run: |
-          cd package
-          cp sheduled-reports-app/gpx_reporting_linux_arm64 sheduled-reports-app/gpx_reporting
+          # Copy the platform-specific backend binary to dist
+          cp dist/gpx_reporting_linux_arm64 dist/gpx_reporting
+          chmod +x dist/gpx_reporting
+
+          # Sign the plugin
           npx --yes @grafana/sign-plugin@latest --rootUrls https://grafana.com
-          mv sheduled-reports-app sheduled-reports-app-linux-arm64
-          cp -r sheduled-reports-app-linux-arm64 sheduled-reports-app
-          rm sheduled-reports-app/gpx_reporting
+
+          # Create platform-specific package directory
+          mkdir -p ci/packages/sheduled-reports-app
+          cp -r dist/* ci/packages/sheduled-reports-app/
+
+          # Create archive
+          cd ci/packages
+          zip -r ../../sheduled-reports-app-linux-arm64.zip sheduled-reports-app
+
+          # Clean up for next platform
+          cd ../..
+          rm -rf ci/packages
+          rm dist/gpx_reporting
         env:
           GRAFANA_ACCESS_POLICY_TOKEN: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
 
-      - name: Sign plugin for Darwin (amd64)
+      - name: Sign and package plugin for Darwin (amd64)
         run: |
-          cd package
-          cp sheduled-reports-app/gpx_reporting_darwin_amd64 sheduled-reports-app/gpx_reporting
+          # Copy the platform-specific backend binary to dist
+          cp dist/gpx_reporting_darwin_amd64 dist/gpx_reporting
+          chmod +x dist/gpx_reporting
+
+          # Sign the plugin
           npx --yes @grafana/sign-plugin@latest --rootUrls https://grafana.com
-          mv sheduled-reports-app sheduled-reports-app-darwin-amd64
-          cp -r sheduled-reports-app-darwin-amd64 sheduled-reports-app
-          rm sheduled-reports-app/gpx_reporting
+
+          # Create platform-specific package directory
+          mkdir -p ci/packages/sheduled-reports-app
+          cp -r dist/* ci/packages/sheduled-reports-app/
+
+          # Create archive
+          cd ci/packages
+          zip -r ../../sheduled-reports-app-darwin-amd64.zip sheduled-reports-app
+
+          # Clean up for next platform
+          cd ../..
+          rm -rf ci/packages
+          rm dist/gpx_reporting
         env:
           GRAFANA_ACCESS_POLICY_TOKEN: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
 
-      - name: Sign plugin for Darwin (arm64)
+      - name: Sign and package plugin for Darwin (arm64)
         run: |
-          cd package
-          cp sheduled-reports-app/gpx_reporting_darwin_arm64 sheduled-reports-app/gpx_reporting
+          # Copy the platform-specific backend binary to dist
+          cp dist/gpx_reporting_darwin_arm64 dist/gpx_reporting
+          chmod +x dist/gpx_reporting
+
+          # Sign the plugin
           npx --yes @grafana/sign-plugin@latest --rootUrls https://grafana.com
-          mv sheduled-reports-app sheduled-reports-app-darwin-arm64
+
+          # Create platform-specific package directory
+          mkdir -p ci/packages/sheduled-reports-app
+          cp -r dist/* ci/packages/sheduled-reports-app/
+
+          # Create archive
+          cd ci/packages
+          zip -r ../../sheduled-reports-app-darwin-arm64.zip sheduled-reports-app
+
+          # Clean up
+          cd ../..
+          rm -rf ci/packages
         env:
           GRAFANA_ACCESS_POLICY_TOKEN: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
-
-      - name: Create plugin archives
-        run: |
-          cd package
-
-          # Create zip for each signed platform-specific package
-          zip -r ../sheduled-reports-app-linux-amd64.zip sheduled-reports-app-linux-amd64
-          zip -r ../sheduled-reports-app-linux-arm64.zip sheduled-reports-app-linux-arm64
-          zip -r ../sheduled-reports-app-darwin-amd64.zip sheduled-reports-app-darwin-amd64
-          zip -r ../sheduled-reports-app-darwin-arm64.zip sheduled-reports-app-darwin-arm64
 
       - name: Generate checksums
         run: |
