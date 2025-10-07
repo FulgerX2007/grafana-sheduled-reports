@@ -5,10 +5,11 @@ all: build
 # Build both frontend and backend
 build: build-backend build-frontend
 
-# Build Go backend
+# Build Go backend with platform-specific name
 build-backend:
 	@echo "Building backend..."
-	cd cmd/backend && CGO_ENABLED=1 go build -o ../../dist/gpx_reporting
+	cd cmd/backend && env CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -o ../../dist/gpx_reporting_linux_amd64
+	chmod +x dist/gpx_reporting_linux_amd64
 
 # Build frontend
 build-frontend:
