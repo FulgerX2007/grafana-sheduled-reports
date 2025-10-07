@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AppRootProps } from '@grafana/data';
 import { TabsBar, Tab, TabContent } from '@grafana/ui';
+import { config } from '@grafana/runtime';
 import { SchedulesPage } from '../pages/Schedules/SchedulesPage';
 import { ScheduleEditPage } from '../pages/Schedules/ScheduleEditPage';
 import { RunHistoryPage } from '../pages/RunHistory/RunHistoryPage';
@@ -42,7 +43,8 @@ export const App: React.FC<AppRootProps> = (props) => {
 
   const navigate = (page: Page, scheduleId?: number) => {
     // Navigate to the proper URL for each page
-    const baseUrl = '/a/sheduled-reports-app';
+    const appSubUrl = config.appSubUrl || '';
+    const baseUrl = `${appSubUrl}/a/sheduled-reports-app`;
     let url = baseUrl;
 
     switch (page) {
