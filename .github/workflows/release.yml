@@ -3,7 +3,7 @@ name: Release Plugin
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 jobs:
   release:
@@ -26,13 +26,13 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          cache: 'npm'
+          node-version: "22"
+          cache: "npm"
 
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.24'
+          go-version: "1.24"
 
       - name: Install frontend dependencies
         run: npm ci
@@ -69,18 +69,19 @@ jobs:
       - name: Package plugin for Linux (amd64)
         run: |
           # Copy the platform-specific backend binary to dist
-          cp dist/gpx_reporting_linux_amd64 dist/gpx_reporting
-          chmod +x dist/gpx_reporting
+          # cp dist/gpx_reporting_linux_amd64 dist/gpx_reporting
+          chmod +x dist/gpx_reporting_linux_amd64
 
           # Verify the binary exists
-          ls -lh dist/gpx_reporting
-          file dist/gpx_reporting
+          ls -lh dist/gpx_reporting_linux_amd64
+          file dist/gpx_reporting_linux_amd64
 
           # Create platform-specific package directory
           mkdir -p ci/packages/sheduled-reports-app
 
           # Copy only the files we need (excluding platform-specific binaries)
           rsync -av --exclude='gpx_reporting_*' dist/ ci/packages/sheduled-reports-app/
+          rsync -av dist/gpx_reporting_linux_amd64 ci/packages/sheduled-reports-app/gpx_reporting_linux_amd64
 
           # Verify package contents
           echo "=== Package contents ==="
@@ -93,7 +94,6 @@ jobs:
           # Clean up for next platform
           cd ../..
           rm -rf ci/packages
-          rm dist/gpx_reporting
 
       - name: Package plugin for Linux (arm64)
         run: |
