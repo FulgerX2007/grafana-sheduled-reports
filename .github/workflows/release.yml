@@ -1,0 +1,174 @@
+name: Release Plugin
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Build backend for Linux (amd64)
+        run: |
+          cd cmd/backend
+          CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -o ../../dist/gpx_reporting_linux_amd64
+          chmod +x ../../dist/gpx_reporting_linux_amd64
+
+      - name: Build backend for Linux (arm64)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu
+          cd cmd/backend
+          CGO_ENABLED=1 GOOS=linux GOARCH=arm64 CC=aarch64-linux-gnu-gcc go build -o ../../dist/gpx_reporting_linux_arm64
+          chmod +x ../../dist/gpx_reporting_linux_arm64
+
+      - name: Build backend for Darwin (amd64)
+        run: |
+          cd cmd/backend
+          CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -o ../../dist/gpx_reporting_darwin_amd64
+          chmod +x ../../dist/gpx_reporting_darwin_amd64
+
+      - name: Build backend for Darwin (arm64)
+        run: |
+          cd cmd/backend
+          CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -o ../../dist/gpx_reporting_darwin_arm64
+          chmod +x ../../dist/gpx_reporting_darwin_arm64
+
+      - name: Prepare plugin package
+        run: |
+          # Create package directory
+          mkdir -p package/sheduled-reports-app
+
+          # Copy frontend build artifacts
+          cp -r dist/* package/sheduled-reports-app/
+
+          # Copy plugin metadata
+          cp src/plugin.json package/sheduled-reports-app/
+
+          # Copy README if exists
+          [ -f README.md ] && cp README.md package/sheduled-reports-app/ || true
+
+          # Copy LICENSE if exists
+          [ -f LICENSE ] && cp LICENSE package/sheduled-reports-app/ || true
+
+      - name: Sign plugin for Linux (amd64)
+        run: |
+          cd package
+          cp sheduled-reports-app/gpx_reporting_linux_amd64 sheduled-reports-app/gpx_reporting
+          npx --yes @grafana/sign-plugin@latest --rootUrls https://grafana.com
+          mv sheduled-reports-app sheduled-reports-app-linux-amd64
+          cp -r sheduled-reports-app-linux-amd64 sheduled-reports-app
+          rm sheduled-reports-app/gpx_reporting
+        env:
+          GRAFANA_ACCESS_POLICY_TOKEN: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
+
+      - name: Sign plugin for Linux (arm64)
+        run: |
+          cd package
+          cp sheduled-reports-app/gpx_reporting_linux_arm64 sheduled-reports-app/gpx_reporting
+          npx --yes @grafana/sign-plugin@latest --rootUrls https://grafana.com
+          mv sheduled-reports-app sheduled-reports-app-linux-arm64
+          cp -r sheduled-reports-app-linux-arm64 sheduled-reports-app
+          rm sheduled-reports-app/gpx_reporting
+        env:
+          GRAFANA_ACCESS_POLICY_TOKEN: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
+
+      - name: Sign plugin for Darwin (amd64)
+        run: |
+          cd package
+          cp sheduled-reports-app/gpx_reporting_darwin_amd64 sheduled-reports-app/gpx_reporting
+          npx --yes @grafana/sign-plugin@latest --rootUrls https://grafana.com
+          mv sheduled-reports-app sheduled-reports-app-darwin-amd64
+          cp -r sheduled-reports-app-darwin-amd64 sheduled-reports-app
+          rm sheduled-reports-app/gpx_reporting
+        env:
+          GRAFANA_ACCESS_POLICY_TOKEN: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
+
+      - name: Sign plugin for Darwin (arm64)
+        run: |
+          cd package
+          cp sheduled-reports-app/gpx_reporting_darwin_arm64 sheduled-reports-app/gpx_reporting
+          npx --yes @grafana/sign-plugin@latest --rootUrls https://grafana.com
+          mv sheduled-reports-app sheduled-reports-app-darwin-arm64
+        env:
+          GRAFANA_ACCESS_POLICY_TOKEN: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
+
+      - name: Create plugin archives
+        run: |
+          cd package
+
+          # Create zip for each signed platform-specific package
+          zip -r ../sheduled-reports-app-linux-amd64.zip sheduled-reports-app-linux-amd64
+          zip -r ../sheduled-reports-app-linux-arm64.zip sheduled-reports-app-linux-arm64
+          zip -r ../sheduled-reports-app-darwin-amd64.zip sheduled-reports-app-darwin-amd64
+          zip -r ../sheduled-reports-app-darwin-arm64.zip sheduled-reports-app-darwin-arm64
+
+      - name: Generate checksums
+        run: |
+          sha256sum sheduled-reports-app-*.zip > checksums.txt
+
+      - name: Extract release notes
+        id: extract_notes
+        run: |
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+          echo "tag_name=${TAG_NAME}" >> $GITHUB_OUTPUT
+
+          # Extract version number (remove 'v' prefix if present)
+          VERSION=${TAG_NAME#v}
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Release ${{ steps.extract_notes.outputs.tag_name }}
+          body: |
+            ## Grafana Scheduled Reports Plugin ${{ steps.extract_notes.outputs.version }}
+
+            **✅ This plugin is signed and verified by Grafana.**
+
+            ### Installation
+
+            Download the appropriate archive for your platform:
+            - **Linux (amd64)**: `sheduled-reports-app-linux-amd64.zip`
+            - **Linux (arm64)**: `sheduled-reports-app-linux-arm64.zip`
+            - **macOS (Intel)**: `sheduled-reports-app-darwin-amd64.zip`
+            - **macOS (Apple Silicon)**: `sheduled-reports-app-darwin-arm64.zip`
+
+            Extract the archive to your Grafana plugins directory:
+            ```bash
+            unzip sheduled-reports-app-<platform>.zip -d /var/lib/grafana/plugins/
+            ```
+
+            Restart Grafana to load the plugin.
+
+            ### Checksums
+            See `checksums.txt` for SHA256 checksums of all archives.
+          files: |
+            sheduled-reports-app-*.zip
+            checksums.txt
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
