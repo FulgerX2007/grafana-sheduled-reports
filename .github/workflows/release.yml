@@ -66,14 +66,11 @@ jobs:
           CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -o ../../dist/gpx_reporting_darwin_arm64
           chmod +x ../../dist/gpx_reporting_darwin_arm64
 
-      - name: Sign and package plugin for Linux (amd64)
+      - name: Package plugin for Linux (amd64)
         run: |
           # Copy the platform-specific backend binary to dist
           cp dist/gpx_reporting_linux_amd64 dist/gpx_reporting
           chmod +x dist/gpx_reporting
-
-          # Sign the plugin (signs the dist/ directory)
-          npx --yes @grafana/sign-plugin@latest --rootUrls '*'
 
           # Create platform-specific package directory
           mkdir -p ci/packages/sheduled-reports-app
@@ -88,18 +85,13 @@ jobs:
           # Clean up for next platform
           cd ../..
           rm -rf ci/packages
-          rm dist/gpx_reporting dist/MANIFEST.txt
-        env:
-          GRAFANA_ACCESS_POLICY_TOKEN: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
+          rm dist/gpx_reporting
 
-      - name: Sign and package plugin for Linux (arm64)
+      - name: Package plugin for Linux (arm64)
         run: |
           # Copy the platform-specific backend binary to dist
           cp dist/gpx_reporting_linux_arm64 dist/gpx_reporting
           chmod +x dist/gpx_reporting
-
-          # Sign the plugin
-          npx --yes @grafana/sign-plugin@latest --rootUrls '*'
 
           # Create platform-specific package directory
           mkdir -p ci/packages/sheduled-reports-app
@@ -114,18 +106,13 @@ jobs:
           # Clean up for next platform
           cd ../..
           rm -rf ci/packages
-          rm dist/gpx_reporting dist/MANIFEST.txt
-        env:
-          GRAFANA_ACCESS_POLICY_TOKEN: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
+          rm dist/gpx_reporting
 
-      - name: Sign and package plugin for Darwin (amd64)
+      - name: Package plugin for Darwin (amd64)
         run: |
           # Copy the platform-specific backend binary to dist
           cp dist/gpx_reporting_darwin_amd64 dist/gpx_reporting
           chmod +x dist/gpx_reporting
-
-          # Sign the plugin
-          npx --yes @grafana/sign-plugin@latest --rootUrls '*'
 
           # Create platform-specific package directory
           mkdir -p ci/packages/sheduled-reports-app
@@ -140,18 +127,13 @@ jobs:
           # Clean up for next platform
           cd ../..
           rm -rf ci/packages
-          rm dist/gpx_reporting dist/MANIFEST.txt
-        env:
-          GRAFANA_ACCESS_POLICY_TOKEN: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
+          rm dist/gpx_reporting
 
-      - name: Sign and package plugin for Darwin (arm64)
+      - name: Package plugin for Darwin (arm64)
         run: |
           # Copy the platform-specific backend binary to dist
           cp dist/gpx_reporting_darwin_arm64 dist/gpx_reporting
           chmod +x dist/gpx_reporting
-
-          # Sign the plugin
-          npx --yes @grafana/sign-plugin@latest --rootUrls '*'
 
           # Create platform-specific package directory
           mkdir -p ci/packages/sheduled-reports-app
@@ -166,8 +148,6 @@ jobs:
           # Clean up
           cd ../..
           rm -rf ci/packages
-        env:
-          GRAFANA_ACCESS_POLICY_TOKEN: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
 
       - name: Generate checksums
         run: |
@@ -180,8 +160,6 @@ jobs:
           body: |
             ## Grafana Scheduled Reports Plugin ${{ steps.version.outputs.version }}
 
-            **✅ This plugin is signed and verified by Grafana.**
-
             ### Installation
 
             Download the appropriate archive for your platform:
@@ -190,12 +168,25 @@ jobs:
             - **macOS (Intel)**: `sheduled-reports-app-${{ steps.version.outputs.version }}.darwin-amd64.zip`
             - **macOS (Apple Silicon)**: `sheduled-reports-app-${{ steps.version.outputs.version }}.darwin-arm64.zip`
 
-            Extract the archive to your Grafana plugins directory:
+            **1. Extract the archive to your Grafana plugins directory:**
             ```bash
             unzip sheduled-reports-app-${{ steps.version.outputs.version }}.<platform>.zip -d /var/lib/grafana/plugins/
             ```
 
-            Restart Grafana to load the plugin.
+            **2. Configure Grafana to allow unsigned plugins:**
+
+            Add to your Grafana configuration file (`grafana.ini` or `custom.ini`):
+            ```ini
+            [plugins]
+            allow_loading_unsigned_plugins = sheduled-reports-app
+            ```
+
+            Or set the environment variable:
+            ```bash
+            GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=sheduled-reports-app
+            ```
+
+            **3. Restart Grafana to load the plugin.**
 
             ### Checksums
             See `checksums.txt` for SHA256 checksums of all archives.
