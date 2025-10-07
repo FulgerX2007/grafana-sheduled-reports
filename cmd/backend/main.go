@@ -49,12 +49,29 @@ func run() error {
 	}
 	defer st.Close()
 
-	// Get configuration from environment
-	grafanaURL := os.Getenv("GF_GRAFANA_URL")
-	if grafanaURL == "" {
-		grafanaURL = "http://localhost:3000"
+	// Build Grafana URL from instance configuration
+	// Grafana sets these environment variables for plugins
+	protocol := os.Getenv("GF_INSTANCE_PROTOCOL")
+	if protocol == "" {
+		protocol = "http"
 	}
 
+	httpAddr := os.Getenv("GF_INSTANCE_HTTP_ADDR")
+	if httpAddr == "" || httpAddr == "0.0.0.0" || httpAddr == "::" {
+		// If binding to all interfaces, use localhost for internal requests
+		httpAddr = "localhost"
+	}
+
+	httpPort := os.Getenv("GF_INSTANCE_HTTP_PORT")
+	if httpPort == "" {
+		httpPort = os.Getenv("GF_SERVER_HTTP_PORT")
+		if httpPort == "" {
+			httpPort = "3000"
+		}
+	}
+
+	grafanaURL := fmt.Sprintf("%s://%s:%s", protocol, httpAddr, httpPort)
+	log.Printf("Using Grafana URL: %s", grafanaURL)
 	log.Println("Using Grafana-managed service account for authentication")
 	log.Println("Token will be retrieved automatically from plugin context")
 
