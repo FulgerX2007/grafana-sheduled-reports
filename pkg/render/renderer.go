@@ -160,8 +160,14 @@ func (r *Renderer) buildGrafanaRenderURL(schedule *model.Schedule) (string, erro
 		}
 	}
 
+	// Preserve any subpath from base URL (e.g., /dna from root_url)
+	basePath := u.Path
+	if basePath == "" || basePath == "/" {
+		basePath = ""
+	}
+
 	// Use Grafana's render API endpoint for full dashboard
-	u.Path = fmt.Sprintf("/render/d/%s", schedule.DashboardUID)
+	u.Path = fmt.Sprintf("%s/render/d/%s", basePath, schedule.DashboardUID)
 
 	q := u.Query()
 	q.Set("from", schedule.RangeFrom)
@@ -212,7 +218,13 @@ func (r *Renderer) buildDashboardURL(schedule *model.Schedule) (string, error) {
 		}
 	}
 
-	u.Path = fmt.Sprintf("/d/%s", schedule.DashboardUID)
+	// Preserve any subpath from base URL (e.g., /dna from root_url)
+	basePath := u.Path
+	if basePath == "" || basePath == "/" {
+		basePath = ""
+	}
+
+	u.Path = fmt.Sprintf("%s/d/%s", basePath, schedule.DashboardUID)
 
 	q := u.Query()
 	q.Set("from", schedule.RangeFrom)

@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"net/url"
 	"os"
 	"path/filepath"
 
@@ -70,7 +71,18 @@ func run() error {
 		}
 	}
 
-	grafanaURL := fmt.Sprintf("%s://%s:%s", protocol, httpAddr, httpPort)
+	// Get root_url subpath if configured
+	rootURL := os.Getenv("GF_SERVER_ROOT_URL")
+	subPath := ""
+	if rootURL != "" {
+		// Parse root_url to extract subpath (e.g., http://localhost:3000/dna -> /dna)
+		if u, err := url.Parse(rootURL); err == nil && u.Path != "" && u.Path != "/" {
+			subPath = u.Path
+			log.Printf("Detected root_url subpath: %s", subPath)
+		}
+	}
+
+	grafanaURL := fmt.Sprintf("%s://%s:%s%s", protocol, httpAddr, httpPort, subPath)
 	log.Printf("Using Grafana URL: %s", grafanaURL)
 	log.Println("Using Grafana-managed service account for authentication")
 	log.Println("Token will be retrieved automatically from plugin context")
