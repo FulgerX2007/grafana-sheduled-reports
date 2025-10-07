@@ -110,6 +110,7 @@ type SMTPConfig struct {
 
 // RendererConfig holds renderer configuration
 type RendererConfig struct {
+	Mode             string  `json:"mode"` // "image-renderer" or "native"
 	URL              string  `json:"url"`
 	TimeoutMS        int     `json:"timeout_ms"`
 	DelayMS          int     `json:"delay_ms"`

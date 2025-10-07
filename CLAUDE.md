@@ -21,7 +21,9 @@ This is a Grafana App Plugin for scheduled dashboard reporting in Grafana OSS. I
 **Core Components**:
 - **Frontend**: React/TypeScript app using Grafana UI components and app routing
 - **Backend**: Go plugin using Grafana Plugin SDK for HTTP routes, background workers, and secure storage
-- **Renderer**: Integrates with grafana-image-renderer service via Grafana's `/render` endpoints
+- **Renderer**: Two modes available:
+  - **Native Mode** (Default): Direct Grafana API integration with HTML/PDF generation (no external dependencies for HTML, requires wkhtmltopdf for PDF)
+  - **Image Renderer Mode** (Legacy): Integrates with grafana-image-renderer service via Grafana's `/render` endpoints
 - **Email**: SMTP client supporting either Grafana's SMTP settings or plugin-specific configuration
 - **Storage**: SQLite or BoltDB for schedules, runs, history, and templates (all scoped by OrgID)
 - **Auth**: Uses Grafana service account tokens stored in secure plugin settings
@@ -39,15 +41,23 @@ sheduled-reports-app/
 ├─ pkg/                      # Backend Go packages
 │  ├─ api/                   # HTTP handlers for schedules, runs, settings
 │  ├─ cron/                  # Scheduler and worker pool
-│  ├─ render/                # Grafana renderer client
-│  ├─ pdf/                   # PDF assembly from rendered images
+│  ├─ render/                # Rendering interfaces and implementations
+│  │  ├─ renderer.go         # Legacy image-renderer implementation
+│  │  ├─ native_renderer.go  # Native HTML generation
+│  │  └─ interface.go        # Renderer factory and interface
+│  ├─ grafana/               # Grafana API client for dashboard/panel data
+│  ├─ htmlgen/               # HTML report generator with Chart.js
+│  ├─ htmltopdf/             # HTML-to-PDF converter using wkhtmltopdf
+│  ├─ pdf/                   # PDF assembly from rendered images (legacy)
 │  ├─ mail/                  # SMTP sender
 │  ├─ store/                 # SQLite/BoltDB storage and migrations
 │  ├─ model/                 # DTOs and validation
 │  └─ auth/                  # Service account token and org/user context
 ├─ cmd/backend/              # Backend plugin main.go
 ├─ dist/                     # Build outputs
-└─ provisioning/             # Optional app provisioning files
+├─ provisioning/             # Optional app provisioning files
+├─ INSTALLATION.md           # Installation and deployment guide
+└─ CLAUDE.md                 # This file
 ```
 
 ## Development Commands
@@ -116,6 +126,15 @@ When a user selects a dashboard in the schedule editor:
 Implementation in `ScheduleEditPage.tsx:63-80`
 
 ### Rendering Flow
+
+#### Native Mode (Default)
+1. Fetch dashboard definition via Grafana API `/api/dashboards/uid/{uid}`
+2. Query panel data via Grafana API `/api/ds/query` with time range and variables
+3. Generate self-contained HTML with Chart.js visualizations
+4. For PDF: Convert HTML to PDF using wkhtmltopdf (optional, requires wkhtmltopdf installed)
+5. For HTML: Return generated HTML directly
+
+#### Image Renderer Mode (Legacy)
 1. Build render URL: `/render/d/<uid>?from=X&to=Y&var-foo=bar&kiosk=tv&orgId=N`
 2. Add service account token in Authorization header
 3. Respect `render_delay_ms` for heavy dashboards to let queries finish
@@ -172,8 +191,11 @@ Implementation in `ScheduleEditPage.tsx:63-80`
 ## Environment Variables for Development
 
 ```bash
-GF_INSTALL_PLUGINS=grafana-image-renderer
+# For plugin loading
 GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=<your-app-id>
+
+# For legacy image-renderer mode only (not needed for native mode)
+GF_INSTALL_PLUGINS=grafana-image-renderer
 GF_RENDERING_SERVER_URL=http://renderer:8081/render
 GF_RENDERING_CALLBACK_URL=http://grafana:3000/
 ```
@@ -221,3 +243,5 @@ docker-compose up -d
 - **Variable encoding**: Strictly URL-encode dashboard variables with special characters
 - **Renderer delays**: Heavy dashboards with complex queries need `render_delay_ms` adjustment
 - **Timezone handling**: Store schedules with explicit timezone, convert for cron evaluation
+- **PDF dependencies**: Native mode requires wkhtmltopdf for PDF generation (not needed for HTML-only)
+- **Renderer mode**: Default is "native" - explicitly set to "image-renderer" for legacy mode

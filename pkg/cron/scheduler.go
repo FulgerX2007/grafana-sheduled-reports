@@ -14,7 +14,6 @@ import (
 	"github.com/robfig/cron/v3"
 	"github.com/yourusername/sheduled-reports-app/pkg/mail"
 	"github.com/yourusername/sheduled-reports-app/pkg/model"
-	"github.com/yourusername/sheduled-reports-app/pkg/pdf"
 	"github.com/yourusername/sheduled-reports-app/pkg/render"
 	"github.com/yourusername/sheduled-reports-app/pkg/store"
 )
@@ -176,39 +175,40 @@ func (s *Scheduler) executeScheduleOnce(schedule *model.Schedule, run *model.Run
 		return fmt.Errorf("no settings configured for org %d", schedule.OrgID)
 	}
 
-	log.Printf("DEBUG: Rendering with grafanaURL=%s, rendererURL=%s (using managed service account)", s.grafanaURL, settings.RendererConfig.URL)
+	log.Printf("DEBUG: Rendering with grafanaURL=%s, mode=%s", s.grafanaURL, settings.RendererConfig.Mode)
 
-	// Render dashboard (token will be retrieved from context inside renderer)
-	renderer := render.NewRenderer(s.grafanaURL, settings.RendererConfig)
-	imageData, err := renderer.RenderDashboard(ctx, schedule)
+	// Create renderer based on configuration
+	renderer, err := render.NewDashboardRenderer(s.grafanaURL, settings.RendererConfig)
 	if err != nil {
-		return fmt.Errorf("failed to render dashboard: %w", err)
+		return fmt.Errorf("failed to create renderer: %w", err)
 	}
 
-	run.RenderedPages = 1
-
-	// Generate PDF or HTML
+	// Generate report data based on format
 	var reportData []byte
 	var filename string
 
 	if schedule.Format == "pdf" {
-		pdfGen := pdf.NewGenerator()
-		reportData, err = pdfGen.Generate([][]byte{imageData}, pdf.Options{
-			Title:       schedule.Name,
-			Orientation: "landscape",
-			PageSize:    "A4",
-			Header:      schedule.Name,
-			Footer:      fmt.Sprintf("Generated at %s", time.Now().Format(time.RFC1123)),
-		})
+		reportData, err = renderer.RenderToPDF(ctx, schedule)
 		if err != nil {
-			return fmt.Errorf("failed to generate PDF: %w", err)
+			return fmt.Errorf("failed to render PDF: %w", err)
 		}
 		filename = fmt.Sprintf("%s-%s.pdf", schedule.Name, time.Now().Format("2006-01-02-150405"))
+	} else if schedule.Format == "html" {
+		reportData, err = renderer.RenderToHTML(ctx, schedule)
+		if err != nil {
+			return fmt.Errorf("failed to render HTML: %w", err)
+		}
+		filename = fmt.Sprintf("%s-%s.html", schedule.Name, time.Now().Format("2006-01-02-150405"))
 	} else {
-		// For HTML, just wrap the image
-		reportData = imageData
-		filename = fmt.Sprintf("%s-%s.png", schedule.Name, time.Now().Format("2006-01-02-150405"))
+		// Default to PDF for backwards compatibility
+		reportData, err = renderer.RenderToPDF(ctx, schedule)
+		if err != nil {
+			return fmt.Errorf("failed to render PDF: %w", err)
+		}
+		filename = fmt.Sprintf("%s-%s.pdf", schedule.Name, time.Now().Format("2006-01-02-150405"))
 	}
+
+	run.RenderedPages = 1
 
 	run.Bytes = int64(len(reportData))
 

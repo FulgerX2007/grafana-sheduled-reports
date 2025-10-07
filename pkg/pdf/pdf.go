@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/jung-kurt/gofpdf"
+	"github.com/yourusername/sheduled-reports-app/pkg/model"
 )
 
 // Options holds PDF generation options
@@ -111,4 +112,15 @@ func (g *Generator) Generate(images [][]byte, opts Options) ([]byte, error) {
 	}
 
 	return buf.Bytes(), nil
+}
+
+// GenerateFromImages creates a PDF from images using schedule info
+func (g *Generator) GenerateFromImages(images [][]byte, schedule *model.Schedule) ([]byte, error) {
+	return g.Generate(images, Options{
+		Title:       schedule.Name,
+		Orientation: "landscape",
+		PageSize:    "A4",
+		Header:      schedule.Name,
+		Footer:      fmt.Sprintf("Generated at %s", time.Now().Format(time.RFC1123)),
+	})
 }

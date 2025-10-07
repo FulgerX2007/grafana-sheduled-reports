@@ -269,6 +269,7 @@ func (h *Handler) handleSettings(w http.ResponseWriter, r *http.Request) {
 				OrgID:          orgID,
 				UseGrafanaSMTP: true,
 				RendererConfig: model.RendererConfig{
+					Mode:              "native", // Use native renderer by default (no external dependency)
 					URL:               "http://renderer:8081/render",
 					TimeoutMS:         60000,
 					DelayMS:           1000,
