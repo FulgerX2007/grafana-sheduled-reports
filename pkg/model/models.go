@@ -110,12 +110,13 @@ type SMTPConfig struct {
 
 // RendererConfig holds renderer configuration
 type RendererConfig struct {
-	URL              string  `json:"url"`
-	TimeoutMS        int     `json:"timeout_ms"`
-	DelayMS          int     `json:"delay_ms"`
-	ViewportWidth    int     `json:"viewport_width"`
-	ViewportHeight   int     `json:"viewport_height"`
+	URL               string  `json:"url"`
+	TimeoutMS         int     `json:"timeout_ms"`
+	DelayMS           int     `json:"delay_ms"`
+	ViewportWidth     int     `json:"viewport_width"`
+	ViewportHeight    int     `json:"viewport_height"`
 	DeviceScaleFactor float64 `json:"device_scale_factor"` // Higher values (2-4) increase image quality
+	SkipTLSVerify     bool    `json:"skip_tls_verify"`     // Skip TLS certificate verification
 }
 
 // Limits holds usage limits

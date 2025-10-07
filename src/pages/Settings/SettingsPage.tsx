@@ -179,6 +179,12 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate }) => {
                   onChange={(e) => updateRenderer('viewport_height', parseInt(e.currentTarget.value))}
                 />
               </Field>
+              <Field label="Skip TLS Verification" description="Disable TLS certificate verification (use for self-signed certificates)">
+                <Switch
+                  value={settings.renderer_config?.skip_tls_verify || false}
+                  onChange={(e) => updateRenderer('skip_tls_verify', e.currentTarget.checked)}
+                />
+              </Field>
             </FieldSet>
 
             <FieldSet label="Limits">

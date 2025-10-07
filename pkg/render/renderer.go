@@ -2,6 +2,7 @@ package render
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"io"
 	"log"
@@ -25,13 +26,23 @@ type Renderer struct {
 
 // NewRenderer creates a new renderer instance
 func NewRenderer(grafanaURL string, config model.RendererConfig) *Renderer {
+	// Configure HTTP client with optional TLS skip verification
+	client := &http.Client{
+		Timeout: time.Duration(config.TimeoutMS) * time.Millisecond,
+	}
+
+	if config.SkipTLSVerify {
+		client.Transport = &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		}
+		log.Printf("WARNING: TLS certificate verification disabled for renderer")
+	}
+
 	return &Renderer{
 		grafanaURL:  grafanaURL,
 		rendererURL: config.URL,
 		config:      config,
-		client: &http.Client{
-			Timeout: time.Duration(config.TimeoutMS) * time.Millisecond,
-		},
+		client:      client,
 	}
 }
 

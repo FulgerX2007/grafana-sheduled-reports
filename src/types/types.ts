@@ -96,6 +96,7 @@ export interface RendererConfig {
   delay_ms: number;
   viewport_width: number;
   viewport_height: number;
+  skip_tls_verify?: boolean;
 }
 
 export interface Limits {
