@@ -15,6 +15,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Extract version from tag
+        id: version
+        run: |
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+          VERSION=${TAG_NAME#v}
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "tag_name=${TAG_NAME}" >> $GITHUB_OUTPUT
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -65,20 +73,22 @@ jobs:
           chmod +x dist/gpx_reporting
 
           # Sign the plugin (signs the dist/ directory)
-          npx --yes @grafana/sign-plugin@latest --rootUrls https://grafana.com
+          npx --yes @grafana/sign-plugin@latest
 
           # Create platform-specific package directory
           mkdir -p ci/packages/sheduled-reports-app
-          cp -r dist/* ci/packages/sheduled-reports-app/
+
+          # Copy only the files we need (excluding platform-specific binaries)
+          rsync -av --exclude='gpx_reporting_*' dist/ ci/packages/sheduled-reports-app/
 
           # Create archive
           cd ci/packages
-          zip -r ../../sheduled-reports-app-linux-amd64.zip sheduled-reports-app
+          zip -r ../../sheduled-reports-app-${{ steps.version.outputs.version }}.linux-amd64.zip sheduled-reports-app
 
           # Clean up for next platform
           cd ../..
           rm -rf ci/packages
-          rm dist/gpx_reporting
+          rm dist/gpx_reporting dist/MANIFEST.txt
         env:
           GRAFANA_ACCESS_POLICY_TOKEN: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
 
@@ -89,20 +99,22 @@ jobs:
           chmod +x dist/gpx_reporting
 
           # Sign the plugin
-          npx --yes @grafana/sign-plugin@latest --rootUrls https://grafana.com
+          npx --yes @grafana/sign-plugin@latest
 
           # Create platform-specific package directory
           mkdir -p ci/packages/sheduled-reports-app
-          cp -r dist/* ci/packages/sheduled-reports-app/
+
+          # Copy only the files we need (excluding platform-specific binaries)
+          rsync -av --exclude='gpx_reporting_*' dist/ ci/packages/sheduled-reports-app/
 
           # Create archive
           cd ci/packages
-          zip -r ../../sheduled-reports-app-linux-arm64.zip sheduled-reports-app
+          zip -r ../../sheduled-reports-app-${{ steps.version.outputs.version }}.linux-arm64.zip sheduled-reports-app
 
           # Clean up for next platform
           cd ../..
           rm -rf ci/packages
-          rm dist/gpx_reporting
+          rm dist/gpx_reporting dist/MANIFEST.txt
         env:
           GRAFANA_ACCESS_POLICY_TOKEN: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
 
@@ -113,20 +125,22 @@ jobs:
           chmod +x dist/gpx_reporting
 
           # Sign the plugin
-          npx --yes @grafana/sign-plugin@latest --rootUrls https://grafana.com
+          npx --yes @grafana/sign-plugin@latest
 
           # Create platform-specific package directory
           mkdir -p ci/packages/sheduled-reports-app
-          cp -r dist/* ci/packages/sheduled-reports-app/
+
+          # Copy only the files we need (excluding platform-specific binaries)
+          rsync -av --exclude='gpx_reporting_*' dist/ ci/packages/sheduled-reports-app/
 
           # Create archive
           cd ci/packages
-          zip -r ../../sheduled-reports-app-darwin-amd64.zip sheduled-reports-app
+          zip -r ../../sheduled-reports-app-${{ steps.version.outputs.version }}.darwin-amd64.zip sheduled-reports-app
 
           # Clean up for next platform
           cd ../..
           rm -rf ci/packages
-          rm dist/gpx_reporting
+          rm dist/gpx_reporting dist/MANIFEST.txt
         env:
           GRAFANA_ACCESS_POLICY_TOKEN: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
 
@@ -137,15 +151,17 @@ jobs:
           chmod +x dist/gpx_reporting
 
           # Sign the plugin
-          npx --yes @grafana/sign-plugin@latest --rootUrls https://grafana.com
+          npx --yes @grafana/sign-plugin@latest
 
           # Create platform-specific package directory
           mkdir -p ci/packages/sheduled-reports-app
-          cp -r dist/* ci/packages/sheduled-reports-app/
+
+          # Copy only the files we need (excluding platform-specific binaries)
+          rsync -av --exclude='gpx_reporting_*' dist/ ci/packages/sheduled-reports-app/
 
           # Create archive
           cd ci/packages
-          zip -r ../../sheduled-reports-app-darwin-arm64.zip sheduled-reports-app
+          zip -r ../../sheduled-reports-app-${{ steps.version.outputs.version }}.darwin-arm64.zip sheduled-reports-app
 
           # Clean up
           cd ../..
@@ -157,36 +173,26 @@ jobs:
         run: |
           sha256sum sheduled-reports-app-*.zip > checksums.txt
 
-      - name: Extract release notes
-        id: extract_notes
-        run: |
-          TAG_NAME=${GITHUB_REF#refs/tags/}
-          echo "tag_name=${TAG_NAME}" >> $GITHUB_OUTPUT
-
-          # Extract version number (remove 'v' prefix if present)
-          VERSION=${TAG_NAME#v}
-          echo "version=${VERSION}" >> $GITHUB_OUTPUT
-
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          name: Release ${{ steps.extract_notes.outputs.tag_name }}
+          name: Release ${{ steps.version.outputs.tag_name }}
           body: |
-            ## Grafana Scheduled Reports Plugin ${{ steps.extract_notes.outputs.version }}
+            ## Grafana Scheduled Reports Plugin ${{ steps.version.outputs.version }}
 
             **✅ This plugin is signed and verified by Grafana.**
 
             ### Installation
 
             Download the appropriate archive for your platform:
-            - **Linux (amd64)**: `sheduled-reports-app-linux-amd64.zip`
-            - **Linux (arm64)**: `sheduled-reports-app-linux-arm64.zip`
-            - **macOS (Intel)**: `sheduled-reports-app-darwin-amd64.zip`
-            - **macOS (Apple Silicon)**: `sheduled-reports-app-darwin-arm64.zip`
+            - **Linux (amd64)**: `sheduled-reports-app-${{ steps.version.outputs.version }}.linux-amd64.zip`
+            - **Linux (arm64)**: `sheduled-reports-app-${{ steps.version.outputs.version }}.linux-arm64.zip`
+            - **macOS (Intel)**: `sheduled-reports-app-${{ steps.version.outputs.version }}.darwin-amd64.zip`
+            - **macOS (Apple Silicon)**: `sheduled-reports-app-${{ steps.version.outputs.version }}.darwin-arm64.zip`
 
             Extract the archive to your Grafana plugins directory:
             ```bash
-            unzip sheduled-reports-app-<platform>.zip -d /var/lib/grafana/plugins/
+            unzip sheduled-reports-app-${{ steps.version.outputs.version }}.<platform>.zip -d /var/lib/grafana/plugins/
             ```
 
             Restart Grafana to load the plugin.
