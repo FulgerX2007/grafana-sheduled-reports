@@ -144,11 +144,11 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate }) => {
             </FieldSet>
 
             <FieldSet label="Renderer Configuration">
-              <Field label="Renderer URL">
+              <Field label="Grafana URL" description="Base URL of your Grafana instance (leave empty to auto-detect)">
                 <Input
                   value={settings.renderer_config?.url || ''}
                   onChange={(e) => updateRenderer('url', e.currentTarget.value)}
-                  placeholder="http://renderer:8081/render"
+                  placeholder="http://localhost:3000"
                 />
               </Field>
               <Field label="Timeout (ms)">

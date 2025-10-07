@@ -73,7 +73,11 @@ func (r *Renderer) RenderDashboard(ctx context.Context, schedule *model.Schedule
 		return nil, fmt.Errorf("failed to build render URL: %w", err)
 	}
 
-	log.Printf("DEBUG: Grafana Render URL: %s", renderURL)
+	urlSource := "environment variables"
+	if r.rendererURL != "" {
+		urlSource = "configured settings"
+	}
+	log.Printf("DEBUG: Grafana Render URL: %s (from %s)", renderURL, urlSource)
 	log.Printf("DEBUG: Has token from context: %v (length: %d)", saToken != "", len(saToken))
 
 	// Add delay before rendering to let queries finish
@@ -126,14 +130,23 @@ func (r *Renderer) RenderDashboard(ctx context.Context, schedule *model.Schedule
 
 // buildGrafanaRenderURL constructs the Grafana render API URL
 func (r *Renderer) buildGrafanaRenderURL(schedule *model.Schedule) (string, error) {
-	u, err := url.Parse(r.grafanaURL)
+	// Use configured renderer URL from settings if available, otherwise fall back to grafanaURL
+	baseURL := r.grafanaURL
+	if r.rendererURL != "" {
+		baseURL = r.rendererURL
+	}
+
+	u, err := url.Parse(baseURL)
 	if err != nil {
 		return "", err
 	}
 
-	// Ensure we're using the container hostname, not localhost
-	if u.Host == "localhost:3000" || u.Host == "127.0.0.1:3000" {
-		u.Host = "grafana:3000"
+	// Only auto-adjust hostname if using the default grafanaURL (not custom renderer URL)
+	if r.rendererURL == "" {
+		// Ensure we're using the container hostname, not localhost
+		if u.Host == "localhost:3000" || u.Host == "127.0.0.1:3000" {
+			u.Host = "grafana:3000"
+		}
 	}
 
 	// Use Grafana's render API endpoint for full dashboard
@@ -168,15 +181,24 @@ func (r *Renderer) buildGrafanaRenderURL(schedule *model.Schedule) (string, erro
 
 // buildDashboardURL constructs the Grafana dashboard URL
 func (r *Renderer) buildDashboardURL(schedule *model.Schedule) (string, error) {
-	u, err := url.Parse(r.grafanaURL)
+	// Use configured renderer URL from settings if available, otherwise fall back to grafanaURL
+	baseURL := r.grafanaURL
+	if r.rendererURL != "" {
+		baseURL = r.rendererURL
+	}
+
+	u, err := url.Parse(baseURL)
 	if err != nil {
 		return "", err
 	}
 
-	// Ensure we're using the container hostname, not localhost
-	// Replace localhost with grafana for Docker network
-	if u.Host == "localhost:3000" || u.Host == "127.0.0.1:3000" {
-		u.Host = "grafana:3000"
+	// Only auto-adjust hostname if using the default grafanaURL (not custom renderer URL)
+	if r.rendererURL == "" {
+		// Ensure we're using the container hostname, not localhost
+		// Replace localhost with grafana for Docker network
+		if u.Host == "localhost:3000" || u.Host == "127.0.0.1:3000" {
+			u.Host = "grafana:3000"
+		}
 	}
 
 	u.Path = fmt.Sprintf("/d/%s", schedule.DashboardUID)
