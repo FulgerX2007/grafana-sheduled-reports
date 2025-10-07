@@ -73,7 +73,7 @@ jobs:
           chmod +x dist/gpx_reporting
 
           # Sign the plugin (signs the dist/ directory)
-          npx --yes @grafana/sign-plugin@latest
+          npx --yes @grafana/sign-plugin@latest --rootUrls '*'
 
           # Create platform-specific package directory
           mkdir -p ci/packages/sheduled-reports-app
@@ -99,7 +99,7 @@ jobs:
           chmod +x dist/gpx_reporting
 
           # Sign the plugin
-          npx --yes @grafana/sign-plugin@latest
+          npx --yes @grafana/sign-plugin@latest --rootUrls '*'
 
           # Create platform-specific package directory
           mkdir -p ci/packages/sheduled-reports-app
@@ -125,7 +125,7 @@ jobs:
           chmod +x dist/gpx_reporting
 
           # Sign the plugin
-          npx --yes @grafana/sign-plugin@latest
+          npx --yes @grafana/sign-plugin@latest --rootUrls '*'
 
           # Create platform-specific package directory
           mkdir -p ci/packages/sheduled-reports-app
@@ -151,7 +151,7 @@ jobs:
           chmod +x dist/gpx_reporting
 
           # Sign the plugin
-          npx --yes @grafana/sign-plugin@latest
+          npx --yes @grafana/sign-plugin@latest --rootUrls '*'
 
           # Create platform-specific package directory
           mkdir -p ci/packages/sheduled-reports-app
