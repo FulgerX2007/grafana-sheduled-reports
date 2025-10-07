@@ -3,7 +3,7 @@ import { css } from '@emotion/css';
 import { GrafanaTheme2 } from '@grafana/data';
 import { useStyles2, Button, Icon, LoadingPlaceholder } from '@grafana/ui';
 import { Schedule } from '../../types/types';
-import { getBackendSrv, getAppEvents } from '@grafana/runtime';
+import { getBackendSrv, getAppEvents, config } from '@grafana/runtime';
 import { AppEvents } from '@grafana/data';
 
 interface SchedulesPageProps {
@@ -134,7 +134,8 @@ export const SchedulesPage: React.FC<SchedulesPageProps> = ({ onNavigate }) => {
   };
 
   const downloadArtifact = (runId: number) => {
-    window.open(`/api/plugins/sheduled-reports-app/resources/api/runs/${runId}/artifact`, '_blank');
+    const appSubUrl = config.appSubUrl || '';
+    window.open(`${appSubUrl}/api/plugins/sheduled-reports-app/resources/api/runs/${runId}/artifact`, '_blank');
   };
 
   if (loading) {
@@ -191,7 +192,7 @@ export const SchedulesPage: React.FC<SchedulesPageProps> = ({ onNavigate }) => {
                 <td style={{ padding: '8px', borderBottom: '1px solid #eee' }}>
                   <div>
                     <a
-                      href={`/d/${schedule.dashboard_uid}`}
+                      href={`${config.appSubUrl || ''}/d/${schedule.dashboard_uid}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className={styles.dashboardLink}

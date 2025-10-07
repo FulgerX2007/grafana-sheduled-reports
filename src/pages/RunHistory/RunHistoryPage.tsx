@@ -3,7 +3,7 @@ import { css } from '@emotion/css';
 import { GrafanaTheme2 } from '@grafana/data';
 import { useStyles2, Button, LoadingPlaceholder } from '@grafana/ui';
 import { Run } from '../../types/types';
-import { getBackendSrv } from '@grafana/runtime';
+import { getBackendSrv, config } from '@grafana/runtime';
 
 interface RunWithSchedule extends Run {
   schedule_name?: string;
@@ -74,7 +74,8 @@ export const RunHistoryPage: React.FC<RunHistoryPageProps> = ({ onNavigate, sche
   };
 
   const downloadArtifact = async (runId: number) => {
-    window.open(`/api/plugins/sheduled-reports-app/resources/api/runs/${runId}/artifact`, '_blank');
+    const appSubUrl = config.appSubUrl || '';
+    window.open(`${appSubUrl}/api/plugins/sheduled-reports-app/resources/api/runs/${runId}/artifact`, '_blank');
   };
 
   if (loading) {
