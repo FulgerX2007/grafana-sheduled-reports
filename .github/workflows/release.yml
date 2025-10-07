@@ -43,15 +43,13 @@ jobs:
       - name: Build backend for Linux (amd64)
         run: |
           cd cmd/backend
-          CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -o ../../dist/gpx_reporting_linux_amd64
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o ../../dist/gpx_reporting_linux_amd64
           chmod +x ../../dist/gpx_reporting_linux_amd64
 
       - name: Build backend for Linux (arm64)
         run: |
-          sudo apt-get update
-          sudo apt-get install -y gcc-aarch64-linux-gnu
           cd cmd/backend
-          CGO_ENABLED=1 GOOS=linux GOARCH=arm64 CC=aarch64-linux-gnu-gcc go build -o ../../dist/gpx_reporting_linux_arm64
+          CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o ../../dist/gpx_reporting_linux_arm64
           chmod +x ../../dist/gpx_reporting_linux_arm64
 
       - name: Build backend for Darwin (amd64)
@@ -69,7 +67,6 @@ jobs:
       - name: Package plugin for Linux (amd64)
         run: |
           # Copy the platform-specific backend binary to dist
-          # cp dist/gpx_reporting_linux_amd64 dist/gpx_reporting
           chmod +x dist/gpx_reporting_linux_amd64
 
           # Verify the binary exists

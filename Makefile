@@ -8,7 +8,7 @@ build: build-backend build-frontend
 # Build Go backend with platform-specific name
 build-backend:
 	@echo "Building backend..."
-	cd cmd/backend && env CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -o ../../dist/gpx_reporting_linux_amd64
+	cd cmd/backend && env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o ../../dist/gpx_reporting_linux_amd64
 	chmod +x dist/gpx_reporting_linux_amd64
 
 # Build frontend
