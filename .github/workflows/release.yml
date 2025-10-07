@@ -72,11 +72,19 @@ jobs:
           cp dist/gpx_reporting_linux_amd64 dist/gpx_reporting
           chmod +x dist/gpx_reporting
 
+          # Verify the binary exists
+          ls -lh dist/gpx_reporting
+          file dist/gpx_reporting
+
           # Create platform-specific package directory
           mkdir -p ci/packages/sheduled-reports-app
 
           # Copy only the files we need (excluding platform-specific binaries)
           rsync -av --exclude='gpx_reporting_*' dist/ ci/packages/sheduled-reports-app/
+
+          # Verify package contents
+          echo "=== Package contents ==="
+          ls -lh ci/packages/sheduled-reports-app/ | grep gpx || echo "No gpx_reporting found!"
 
           # Create archive
           cd ci/packages

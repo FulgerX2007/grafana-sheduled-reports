@@ -255,23 +255,36 @@ make sign  # If you have a plugin signing key
 make dist  # Creates distribution zip
 ```
 
-### Installation
+### Installation from Release
 
-1. Copy plugin to Grafana plugins directory:
-   ```bash
-   cp -r dist /var/lib/grafana/plugins/sheduled-reports-app
-   ```
+Download the appropriate release archive for your platform from GitHub releases and extract it:
 
-2. Restart Grafana:
-   ```bash
-   systemctl restart grafana-server
-   ```
+```bash
+unzip sheduled-reports-app-X.Y.Z.linux-amd64.zip -d /var/lib/grafana/plugins/
+systemctl restart grafana-server
+```
 
-3. Allow unsigned plugin (if not signed):
-   ```ini
-   [plugins]
-   allow_loading_unsigned_plugins = sheduled-reports-app
-   ```
+Configure Grafana to allow unsigned plugins:
+```ini
+[plugins]
+allow_loading_unsigned_plugins = sheduled-reports-app
+```
+
+### Local Development Installation
+
+For local development, you need to ensure only the correct binary is present:
+
+```bash
+# Build the plugin
+make build
+
+# Copy to Grafana plugins directory (ensure gpx_reporting exists, not gpx_reporting_linux_amd64)
+mkdir -p /var/lib/grafana/plugins/sheduled-reports-app
+rsync -av --exclude='gpx_reporting_*' dist/ /var/lib/grafana/plugins/sheduled-reports-app/
+
+# Restart Grafana
+systemctl restart grafana-server
+```
 
 ### Recommended Settings
 
