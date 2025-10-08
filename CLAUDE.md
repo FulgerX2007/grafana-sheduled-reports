@@ -131,8 +131,15 @@ Implementation in `ScheduleEditPage.tsx:63-80`
 1. Fetch dashboard definition via Grafana API `/api/dashboards/uid/{uid}`
 2. Query panel data via Grafana API `/api/ds/query` with time range and variables
 3. Generate self-contained HTML with Chart.js visualizations
-4. For PDF: Convert HTML to PDF using wkhtmltopdf (optional, requires wkhtmltopdf installed)
+4. For PDF: Convert HTML to PDF using selected PDF engine:
+   - **Chromium** (default): Headless Chrome with native PDF printing - best quality and JavaScript support
+   - **wkhtmltopdf** (legacy): Binary-based conversion - lighter but deprecated
 5. For HTML: Return generated HTML directly
+
+**PDF Engine Selection:**
+- Configure via `RendererConfig.PDFEngine` setting (`"chromium"` or `"wkhtmltopdf"`)
+- Default is Chromium for better Chart.js rendering and modern CSS support
+- See `CHROMIUM_PDF.md` for detailed documentation
 
 #### Image Renderer Mode (Legacy)
 1. Build render URL: `/render/d/<uid>?from=X&to=Y&var-foo=bar&kiosk=tv&orgId=N`
@@ -243,5 +250,10 @@ docker-compose up -d
 - **Variable encoding**: Strictly URL-encode dashboard variables with special characters
 - **Renderer delays**: Heavy dashboards with complex queries need `render_delay_ms` adjustment
 - **Timezone handling**: Store schedules with explicit timezone, convert for cron evaluation
-- **PDF dependencies**: Native mode requires wkhtmltopdf for PDF generation (not needed for HTML-only)
+- **PDF dependencies**:
+  - Native mode with Chromium (default): Requires Chrome/Chromium browser installed
+  - Native mode with wkhtmltopdf (legacy): Requires wkhtmltopdf binary installed
+  - HTML-only reports: No PDF engine needed
 - **Renderer mode**: Default is "native" - explicitly set to "image-renderer" for legacy mode
+- **PDF engine**: Default is "chromium" - explicitly set to "wkhtmltopdf" for legacy conversion
+- **Chromium in Docker**: Requires additional dependencies (nss, freetype, harfbuzz, ca-certificates) in Alpine images

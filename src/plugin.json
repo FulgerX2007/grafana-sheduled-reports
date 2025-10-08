@@ -71,14 +71,7 @@
   ],
   "dependencies": {
     "grafanaDependency": ">=10.0.0",
-    "plugins": [
-      {
-        "type": "renderer",
-        "id": "grafana-image-renderer",
-        "name": "Image Renderer",
-        "version": ">=3.0.0"
-      }
-    ]
+    "plugins": []
   },
   "backend": true,
   "executable": "gpx_reporting",

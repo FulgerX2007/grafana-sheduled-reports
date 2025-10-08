@@ -117,6 +117,7 @@ type RendererConfig struct {
 	ViewportWidth    int     `json:"viewport_width"`
 	ViewportHeight   int     `json:"viewport_height"`
 	DeviceScaleFactor float64 `json:"device_scale_factor"` // Higher values (2-4) increase image quality
+	PDFEngine        string  `json:"pdf_engine"` // "wkhtmltopdf" or "chromium" (default: chromium)
 }
 
 // Limits holds usage limits

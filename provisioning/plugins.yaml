@@ -1,5 +1,5 @@
 # Plugin Provisioning
-# This file enables the reporting plugin automatically
+# This file enables the reporting plugin automatically with default configuration
 
 apiVersion: 1
 
@@ -7,4 +7,22 @@ apps:
   - type: sheduled-reports-app
     disabled: false
     jsonData:
-      # Add any default configuration here
+      # Default renderer configuration
+      # Uses native mode with Chromium PDF engine (no grafana-image-renderer required)
+      renderer_mode: native
+      renderer_config:
+        mode: native
+        pdf_engine: chromium
+        timeout_ms: 30000
+        delay_ms: 3000
+        viewport_width: 1920
+        viewport_height: 1080
+        device_scale_factor: 2
+      # Default SMTP settings (use Grafana's SMTP configuration)
+      use_grafana_smtp: true
+      # Default limits
+      limits:
+        max_recipients: 50
+        max_attachment_size_mb: 25
+        max_concurrent_renders: 5
+        retention_days: 90

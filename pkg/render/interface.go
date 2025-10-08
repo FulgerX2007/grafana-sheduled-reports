@@ -50,18 +50,44 @@ func (r *ImageRenderer) RenderToPDF(ctx context.Context, schedule *model.Schedul
 	return pdfGen.GenerateFromImages([][]byte{imageData}, schedule)
 }
 
+// PDFConverter is an interface for HTML to PDF conversion
+type PDFConverter interface {
+	Convert(htmlContent []byte) ([]byte, error)
+	ConvertWithOptions(htmlContent []byte, landscape bool, paperSize string) ([]byte, error)
+}
+
 // NativeRendererAdapter adapts the native renderer to the interface
 type NativeRendererAdapter struct {
 	nativeRenderer *NativeRenderer
-	pdfConverter   *htmltopdf.Converter
+	pdfConverter   PDFConverter
+	pdfEngine      string // "wkhtmltopdf" or "chromium"
 }
 
 // NewNativeRendererAdapter creates a new native renderer adapter
 func NewNativeRendererAdapter(grafanaURL string, config model.RendererConfig) *NativeRendererAdapter {
 	timeout := time.Duration(config.TimeoutMS) * time.Millisecond
+
+	// Determine which PDF engine to use
+	pdfEngine := config.PDFEngine
+	if pdfEngine == "" {
+		pdfEngine = "chromium" // Default to Chromium
+	}
+
+	var pdfConverter PDFConverter
+	switch pdfEngine {
+	case "wkhtmltopdf":
+		pdfConverter = htmltopdf.NewConverter(timeout)
+	case "chromium":
+		pdfConverter = htmltopdf.NewChromiumConverter(timeout)
+	default:
+		// Fallback to Chromium if unknown engine specified
+		pdfConverter = htmltopdf.NewChromiumConverter(timeout)
+	}
+
 	return &NativeRendererAdapter{
 		nativeRenderer: NewNativeRenderer(grafanaURL, config),
-		pdfConverter:   htmltopdf.NewConverter(timeout),
+		pdfConverter:   pdfConverter,
+		pdfEngine:      pdfEngine,
 	}
 }
 
@@ -84,7 +110,7 @@ func (r *NativeRendererAdapter) RenderToPDF(ctx context.Context, schedule *model
 func NewDashboardRenderer(grafanaURL string, config model.RendererConfig) (DashboardRenderer, error) {
 	mode := config.Mode
 	if mode == "" {
-		mode = "image-renderer" // Default to legacy mode for backward compatibility
+		mode = "native" // Default to native mode with Chromium
 	}
 
 	switch mode {

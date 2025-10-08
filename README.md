@@ -19,9 +19,11 @@
 ## Prerequisites
 
 - Grafana 10.3 or higher (for managed service accounts)
-- Grafana Image Renderer plugin or service
+- Chromium/Chrome browser (for native PDF rendering)
 - Go 1.21+ (for building)
 - Node.js 18+ (for building)
+
+> **Note**: The plugin now uses **native rendering with Chromium** by default. No external image-renderer service is required!
 
 ## Quick Start
 
