@@ -26,3 +26,4 @@ docker-logs/
 # Temporary
 tmp/
 temp/
+**/gpx_*
