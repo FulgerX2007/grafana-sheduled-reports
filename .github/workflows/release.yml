@@ -66,23 +66,21 @@ jobs:
 
       - name: Package plugin for Linux (amd64)
         run: |
-          # Copy the platform-specific backend binary to dist and rename
-          cp dist/gpx_reporting_linux_amd64 dist/gpx_reporting
-          chmod +x dist/gpx_reporting
-
           # Verify the binary exists
-          ls -lh dist/gpx_reporting
-          file dist/gpx_reporting
+          ls -lh dist/gpx_reporting_linux_amd64
+          file dist/gpx_reporting_linux_amd64
 
           # Create platform-specific package directory
           mkdir -p ci/packages/sheduled-reports-app
 
-          # Copy only the files we need (excluding platform-specific binaries)
+          # Copy frontend and only Linux amd64 backend binary
           rsync -av --exclude='gpx_reporting_*' dist/ ci/packages/sheduled-reports-app/
+          cp dist/gpx_reporting_linux_amd64 ci/packages/sheduled-reports-app/gpx_reporting_linux_amd64
+          chmod +x ci/packages/sheduled-reports-app/gpx_reporting_linux_amd64
 
           # Verify package contents
           echo "=== Package contents ==="
-          ls -lh ci/packages/sheduled-reports-app/ | grep gpx || echo "No gpx_reporting found!"
+          ls -lh ci/packages/sheduled-reports-app/
 
           # Create archive
           cd ci/packages
@@ -91,19 +89,16 @@ jobs:
           # Clean up for next platform
           cd ../..
           rm -rf ci/packages
-          rm dist/gpx_reporting
 
       - name: Package plugin for Linux (arm64)
         run: |
-          # Copy the platform-specific backend binary to dist
-          cp dist/gpx_reporting_linux_arm64 dist/gpx_reporting
-          chmod +x dist/gpx_reporting
-
           # Create platform-specific package directory
           mkdir -p ci/packages/sheduled-reports-app
 
-          # Copy only the files we need (excluding platform-specific binaries)
+          # Copy frontend and only Linux arm64 backend binary
           rsync -av --exclude='gpx_reporting_*' dist/ ci/packages/sheduled-reports-app/
+          cp dist/gpx_reporting_linux_arm64 ci/packages/sheduled-reports-app/gpx_reporting_linux_arm64
+          chmod +x ci/packages/sheduled-reports-app/gpx_reporting_linux_arm64
 
           # Create archive
           cd ci/packages
@@ -112,19 +107,16 @@ jobs:
           # Clean up for next platform
           cd ../..
           rm -rf ci/packages
-          rm dist/gpx_reporting
 
       - name: Package plugin for Darwin (amd64)
         run: |
-          # Copy the platform-specific backend binary to dist
-          cp dist/gpx_reporting_darwin_amd64 dist/gpx_reporting
-          chmod +x dist/gpx_reporting
-
           # Create platform-specific package directory
           mkdir -p ci/packages/sheduled-reports-app
 
-          # Copy only the files we need (excluding platform-specific binaries)
+          # Copy frontend and only Darwin amd64 backend binary
           rsync -av --exclude='gpx_reporting_*' dist/ ci/packages/sheduled-reports-app/
+          cp dist/gpx_reporting_darwin_amd64 ci/packages/sheduled-reports-app/gpx_reporting_darwin_amd64
+          chmod +x ci/packages/sheduled-reports-app/gpx_reporting_darwin_amd64
 
           # Create archive
           cd ci/packages
@@ -133,19 +125,16 @@ jobs:
           # Clean up for next platform
           cd ../..
           rm -rf ci/packages
-          rm dist/gpx_reporting
 
       - name: Package plugin for Darwin (arm64)
         run: |
-          # Copy the platform-specific backend binary to dist
-          cp dist/gpx_reporting_darwin_arm64 dist/gpx_reporting
-          chmod +x dist/gpx_reporting
-
           # Create platform-specific package directory
           mkdir -p ci/packages/sheduled-reports-app
 
-          # Copy only the files we need (excluding platform-specific binaries)
+          # Copy frontend and only Darwin arm64 backend binary
           rsync -av --exclude='gpx_reporting_*' dist/ ci/packages/sheduled-reports-app/
+          cp dist/gpx_reporting_darwin_arm64 ci/packages/sheduled-reports-app/gpx_reporting_darwin_arm64
+          chmod +x ci/packages/sheduled-reports-app/gpx_reporting_darwin_arm64
 
           # Create archive
           cd ci/packages
