@@ -114,10 +114,25 @@ func buildGrafanaURL() string {
 		httpPort = "3000"
 	}
 
-	// Build base URL (without root_url path)
+	// Get root_url which may include subpath like /dna/
+	rootURL := os.Getenv("GF_SERVER_ROOT_URL")
+
+	// If root_url is a full URL (starts with http), use it directly
+	if strings.HasPrefix(rootURL, "http://") || strings.HasPrefix(rootURL, "https://") {
+		log.DefaultLogger.Info("Using root_url as full URL", "url", rootURL)
+		return strings.TrimSuffix(rootURL, "/")
+	}
+
+	// Build base URL
 	url := fmt.Sprintf("%s://%s:%s", protocol, httpAddr, httpPort)
 
-	log.DefaultLogger.Info("Built Grafana URL", "url", url, "protocol", protocol, "addr", httpAddr, "port", httpPort)
+	// Append root_url path if it exists
+	if rootURL != "" && rootURL != "/" {
+		rootURL = strings.TrimSuffix(rootURL, "/")
+		url = url + rootURL
+	}
+
+	log.DefaultLogger.Info("Built Grafana URL", "url", url, "protocol", protocol, "addr", httpAddr, "port", httpPort, "rootURL", rootURL)
 
 	return url
 }
