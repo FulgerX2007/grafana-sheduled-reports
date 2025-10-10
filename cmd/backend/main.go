@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
@@ -60,11 +62,8 @@ func createHandler() (backend.CallResourceHandler, error) {
 		return nil, err
 	}
 
-	// Get configuration from environment
-	grafanaURL := os.Getenv("GF_GRAFANA_URL")
-	if grafanaURL == "" {
-		grafanaURL = "http://localhost:3000"
-	}
+	// Build Grafana URL from Grafana's configuration environment variables
+	grafanaURL := buildGrafanaURL()
 
 	// Create artifacts directory
 	artifactsPath := filepath.Join(dataPath, "artifacts")
@@ -85,4 +84,40 @@ func createHandler() (backend.CallResourceHandler, error) {
 	handler := api.NewHandler(st, scheduler)
 
 	return handler, nil
+}
+
+// buildGrafanaURL constructs the Grafana URL from environment variables
+func buildGrafanaURL() string {
+	// Try to get from explicit override first
+	if url := os.Getenv("GF_GRAFANA_URL"); url != "" {
+		return strings.TrimSuffix(url, "/")
+	}
+
+	// Build from Grafana server configuration
+	protocol := os.Getenv("GF_SERVER_PROTOCOL")
+	if protocol == "" {
+		protocol = "http"
+	}
+
+	domain := os.Getenv("GF_SERVER_DOMAIN")
+	httpAddr := os.Getenv("GF_SERVER_HTTP_ADDR")
+	if domain != "" && domain != "localhost" {
+		// Use domain if explicitly set
+		httpAddr = domain
+	} else if httpAddr == "" || httpAddr == "0.0.0.0" || httpAddr == "::" {
+		// Use localhost if addr is not set or is wildcard
+		httpAddr = "127.0.0.1"
+	}
+
+	httpPort := os.Getenv("GF_SERVER_HTTP_PORT")
+	if httpPort == "" {
+		httpPort = "3000"
+	}
+
+	// Build base URL (without root_url path)
+	url := fmt.Sprintf("%s://%s:%s", protocol, httpAddr, httpPort)
+
+	log.DefaultLogger.Info("Built Grafana URL", "url", url, "protocol", protocol, "addr", httpAddr, "port", httpPort)
+
+	return url
 }
