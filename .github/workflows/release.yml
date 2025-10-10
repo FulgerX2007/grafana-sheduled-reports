@@ -66,19 +66,19 @@ jobs:
 
       - name: Package plugin for Linux (amd64)
         run: |
-          # Copy the platform-specific backend binary to dist
-          chmod +x dist/gpx_reporting_linux_amd64
+          # Copy the platform-specific backend binary to dist and rename
+          cp dist/gpx_reporting_linux_amd64 dist/gpx_reporting
+          chmod +x dist/gpx_reporting
 
           # Verify the binary exists
-          ls -lh dist/gpx_reporting_linux_amd64
-          file dist/gpx_reporting_linux_amd64
+          ls -lh dist/gpx_reporting
+          file dist/gpx_reporting
 
           # Create platform-specific package directory
           mkdir -p ci/packages/sheduled-reports-app
 
           # Copy only the files we need (excluding platform-specific binaries)
           rsync -av --exclude='gpx_reporting_*' dist/ ci/packages/sheduled-reports-app/
-          rsync -av dist/gpx_reporting_linux_amd64 ci/packages/sheduled-reports-app/gpx_reporting_linux_amd64
 
           # Verify package contents
           echo "=== Package contents ==="
@@ -91,6 +91,7 @@ jobs:
           # Clean up for next platform
           cd ../..
           rm -rf ci/packages
+          rm dist/gpx_reporting
 
       - name: Package plugin for Linux (arm64)
         run: |
