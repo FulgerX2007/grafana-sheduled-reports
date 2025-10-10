@@ -4,11 +4,13 @@ go 1.24.6
 
 require (
 	github.com/SebastiaanKlippert/go-wkhtmltopdf v1.9.3
+	github.com/chromedp/cdproto v0.0.0-20250803210736-d308e07a266d
+	github.com/chromedp/chromedp v0.14.1
 	github.com/grafana/grafana-plugin-sdk-go v0.280.0
 	github.com/jung-kurt/gofpdf v1.16.2
-	github.com/mattn/go-sqlite3 v1.14.32
 	github.com/robfig/cron/v3 v3.0.1
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
+	modernc.org/sqlite v1.34.4
 )
 
 require (
@@ -17,10 +19,9 @@ require (
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cheekybits/genny v1.0.0 // indirect
-	github.com/chromedp/cdproto v0.0.0-20250803210736-d308e07a266d // indirect
-	github.com/chromedp/chromedp v0.14.1 // indirect
 	github.com/chromedp/sysutil v1.1.0 // indirect
 	github.com/clipperhouse/uax29/v2 v2.2.0 // indirect
+	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/fatih/color v1.18.0 // indirect
 	github.com/go-json-experiment/json v0.0.0-20250725192818-e39067aee2d2 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
@@ -42,6 +43,7 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.3 // indirect
 	github.com/hashicorp/go-hclog v1.6.3 // indirect
 	github.com/hashicorp/go-plugin v1.7.0 // indirect
+	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/hashicorp/yamux v0.1.2 // indirect
 	github.com/jaegertracing/jaeger-idl v0.6.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
@@ -54,6 +56,7 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
+	github.com/ncruces/go-strftime v0.1.9 // indirect
 	github.com/oklog/run v1.2.0 // indirect
 	github.com/olekukonko/tablewriter v0.0.5 // indirect
 	github.com/pierrec/lz4/v4 v4.1.22 // indirect
@@ -61,6 +64,7 @@ require (
 	github.com/prometheus/client_model v0.6.2 // indirect
 	github.com/prometheus/common v0.66.1 // indirect
 	github.com/prometheus/procfs v0.17.0 // indirect
+	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/zeebo/xxh3 v1.0.2 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.63.0 // indirect
@@ -89,4 +93,10 @@ require (
 	google.golang.org/grpc v1.75.1 // indirect
 	google.golang.org/protobuf v1.36.10 // indirect
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
+	modernc.org/gc/v3 v3.0.0-20240107210532-573471604cb6 // indirect
+	modernc.org/libc v1.55.3 // indirect
+	modernc.org/mathutil v1.6.0 // indirect
+	modernc.org/memory v1.8.0 // indirect
+	modernc.org/strutil v1.2.0 // indirect
+	modernc.org/token v1.1.0 // indirect
 )
