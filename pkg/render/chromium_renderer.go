@@ -230,9 +230,20 @@ func (r *ChromiumRenderer) buildDashboardURL(schedule *model.Schedule) (string, 
 		return "", err
 	}
 
-	// Ensure we're using the container hostname, not localhost
-	if u.Host == "localhost:3000" || u.Host == "127.0.0.1:3000" {
-		u.Host = "grafana:3000"
+	// Only convert localhost to grafana hostname if explicitly configured to do so
+	// This is needed for Docker deployments where the plugin runs in a separate container
+	// For non-Docker deployments, use the actual configured hostname
+	// Note: This conversion should only happen if GRAFANA_HOSTNAME env var is set
+	if targetHost := os.Getenv("GRAFANA_HOSTNAME"); targetHost != "" {
+		if u.Host == "localhost:3000" || u.Host == "127.0.0.1:3000" || u.Host == "localhost" || u.Host == "127.0.0.1" {
+			// Parse target to preserve protocol
+			if u.Port() != "" {
+				u.Host = fmt.Sprintf("%s:%s", targetHost, u.Port())
+			} else {
+				u.Host = targetHost
+			}
+			log.Printf("DEBUG: Converted localhost to %s for Docker deployment", u.Host)
+		}
 	}
 
 	// Preserve any subpath from base URL (e.g., /dna from root_url)
