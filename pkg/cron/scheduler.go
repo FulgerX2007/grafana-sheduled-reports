@@ -218,7 +218,7 @@ func (s *Scheduler) executeScheduleOnce(schedule *model.Schedule, run *model.Run
 	}
 
 	// Render dashboard (token will be retrieved from context inside renderer)
-	imageData, err := renderer.RenderDashboard(ctx, schedule)
+	renderedData, err := renderer.RenderDashboard(ctx, schedule)
 	if err != nil {
 		return fmt.Errorf("failed to render dashboard: %w", err)
 	}
@@ -230,21 +230,30 @@ func (s *Scheduler) executeScheduleOnce(schedule *model.Schedule, run *model.Run
 	var filename string
 
 	if schedule.Format == "pdf" {
-		pdfGen := pdf.NewGenerator()
-		reportData, err = pdfGen.Generate([][]byte{imageData}, pdf.Options{
-			Title:       schedule.Name,
-			Orientation: "landscape",
-			PageSize:    "A4",
-			Header:      schedule.Name,
-			Footer:      fmt.Sprintf("Generated at %s", time.Now().Format(time.RFC1123)),
-		})
-		if err != nil {
-			return fmt.Errorf("failed to generate PDF: %w", err)
+		// Check if backend already returned PDF (wkhtmltopdf) or PNG (chromium)
+		if backendType == render.BackendWkhtmltopdf {
+			// wkhtmltopdf returns PDF directly
+			reportData = renderedData
+			log.Printf("DEBUG: Using PDF directly from wkhtmltopdf backend (%d bytes)", len(reportData))
+		} else {
+			// chromium returns PNG, need to convert to PDF
+			pdfGen := pdf.NewGenerator()
+			reportData, err = pdfGen.Generate([][]byte{renderedData}, pdf.Options{
+				Title:       schedule.Name,
+				Orientation: "landscape",
+				PageSize:    "A4",
+				Header:      schedule.Name,
+				Footer:      fmt.Sprintf("Generated at %s", time.Now().Format(time.RFC1123)),
+			})
+			if err != nil {
+				return fmt.Errorf("failed to generate PDF from PNG: %w", err)
+			}
+			log.Printf("DEBUG: Converted PNG to PDF (%d bytes)", len(reportData))
 		}
 		filename = fmt.Sprintf("%s-%s.pdf", schedule.Name, time.Now().Format("2006-01-02-150405"))
 	} else {
-		// For HTML, just wrap the image
-		reportData = imageData
+		// For HTML format, use the rendered data directly
+		reportData = renderedData
 		filename = fmt.Sprintf("%s-%s.png", schedule.Name, time.Now().Format("2006-01-02-150405"))
 	}
 
