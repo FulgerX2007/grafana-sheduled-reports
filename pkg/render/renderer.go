@@ -2,48 +2,99 @@ package render
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
-	"io"
 	"log"
-	"net/http"
 	"net/url"
 	"os"
 	"strconv"
 	"time"
 
+	"github.com/go-rod/rod"
+	"github.com/go-rod/rod/lib/launcher"
+	"github.com/go-rod/rod/lib/proto"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/yourusername/sheduled-reports-app/pkg/model"
 )
 
-// Renderer handles dashboard rendering
+// Renderer handles dashboard rendering using Chromium
 type Renderer struct {
-	grafanaURL  string
-	rendererURL string
-	config      model.RendererConfig
-	client      *http.Client
+	grafanaURL string
+	config     model.RendererConfig
+	browser    *rod.Browser
 }
 
-// NewRenderer creates a new renderer instance
+// NewRenderer creates a new renderer instance with embedded Chromium
 func NewRenderer(grafanaURL string, config model.RendererConfig) *Renderer {
-	// Configure HTTP client with optional TLS skip verification
-	client := &http.Client{
-		Timeout: time.Duration(config.TimeoutMS) * time.Millisecond,
+	// Set defaults
+	if config.ViewportWidth == 0 {
+		config.ViewportWidth = 1920
 	}
-
-	if config.SkipTLSVerify {
-		client.Transport = &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		}
-		log.Printf("WARNING: TLS certificate verification disabled for renderer")
+	if config.ViewportHeight == 0 {
+		config.ViewportHeight = 1080
+	}
+	if config.TimeoutMS == 0 {
+		config.TimeoutMS = 30000
+	}
+	if config.DeviceScaleFactor == 0 {
+		config.DeviceScaleFactor = 2.0
+	}
+	// Enable headless by default
+	if !config.Headless {
+		config.Headless = true
 	}
 
 	return &Renderer{
-		grafanaURL:  grafanaURL,
-		rendererURL: config.URL,
-		config:      config,
-		client:      client,
+		grafanaURL: grafanaURL,
+		config:     config,
+		browser:    nil, // Lazy initialization
 	}
+}
+
+// getBrowser initializes or returns existing browser instance
+func (r *Renderer) getBrowser() (*rod.Browser, error) {
+	if r.browser != nil {
+		return r.browser, nil
+	}
+
+	// Configure launcher
+	l := launcher.New()
+
+	// Set custom Chromium path if provided
+	if r.config.ChromiumPath != "" {
+		l = l.Bin(r.config.ChromiumPath)
+	}
+
+	// Configure browser flags
+	if r.config.Headless {
+		l = l.Headless(true)
+	}
+	if r.config.DisableGPU {
+		l = l.Set("disable-gpu")
+	}
+	if r.config.NoSandbox {
+		l = l.Set("no-sandbox", "disable-setuid-sandbox")
+	}
+
+	// Skip TLS verification if configured
+	if r.config.SkipTLSVerify {
+		l = l.Set("ignore-certificate-errors")
+		log.Printf("WARNING: TLS certificate verification disabled for renderer")
+	}
+
+	// Launch browser
+	launchURL, err := l.Launch()
+	if err != nil {
+		return nil, fmt.Errorf("failed to launch browser: %w", err)
+	}
+
+	browser := rod.New().ControlURL(launchURL)
+	if err := browser.Connect(); err != nil {
+		return nil, fmt.Errorf("failed to connect to browser: %w", err)
+	}
+
+	r.browser = browser
+	log.Printf("Chromium browser initialized successfully")
+	return browser, nil
 }
 
 // getServiceAccountToken retrieves the service account token from context or environment
@@ -69,153 +120,114 @@ func getServiceAccountToken(ctx context.Context) (string, error) {
 	return token, nil
 }
 
-// RenderDashboard renders a dashboard to PNG
+// RenderDashboard renders a dashboard to PNG using Chromium
 func (r *Renderer) RenderDashboard(ctx context.Context, schedule *model.Schedule) ([]byte, error) {
-	// Get service account token from context
+	// Get service account token
 	saToken, err := getServiceAccountToken(ctx)
 	if err != nil {
 		log.Printf("Warning: Failed to get service account token: %v", err)
-		log.Printf("Rendering may fail without authentication")
+		return nil, fmt.Errorf("no service account token available: %w", err)
 	}
 
-	// Use Grafana's render API instead of calling renderer directly
-	renderURL, err := r.buildGrafanaRenderURL(schedule)
+	// Build dashboard URL
+	dashboardURL, err := r.buildDashboardURL(schedule)
 	if err != nil {
-		return nil, fmt.Errorf("failed to build render URL: %w", err)
+		return nil, fmt.Errorf("failed to build dashboard URL: %w", err)
 	}
 
-	urlSource := "environment variables"
-	if r.rendererURL != "" {
-		urlSource = "configured settings"
-	}
-	log.Printf("DEBUG: Grafana Render URL: %s (from %s)", renderURL, urlSource)
-	log.Printf("DEBUG: Has token from context: %v (length: %d)", saToken != "", len(saToken))
+	log.Printf("DEBUG: Dashboard URL: %s", dashboardURL)
+	log.Printf("DEBUG: Using service account token (length: %d)", len(saToken))
 
-	// Add delay before rendering to let queries finish
+	// Get or initialize browser
+	browser, err := r.getBrowser()
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize browser: %w", err)
+	}
+
+	// Create a new page
+	page, err := browser.Page(proto.TargetCreateTarget{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create page: %w", err)
+	}
+	defer page.Close()
+
+	// Set viewport size
+	if err := page.SetViewport(&proto.EmulationSetDeviceMetricsOverride{
+		Width:             r.config.ViewportWidth,
+		Height:            r.config.ViewportHeight,
+		DeviceScaleFactor: r.config.DeviceScaleFactor,
+		Mobile:            false,
+	}); err != nil {
+		return nil, fmt.Errorf("failed to set viewport: %w", err)
+	}
+
+	// Set authentication header
+	router := page.HijackRequests()
+	router.MustAdd("*", func(ctx *rod.Hijack) {
+		ctx.Request.Req().Header.Set("Authorization", "Bearer "+saToken)
+		ctx.ContinueRequest(&proto.FetchContinueRequest{})
+	})
+	go router.Run()
+
+	// Set timeout
+	page = page.Timeout(time.Duration(r.config.TimeoutMS) * time.Millisecond)
+
+	// Navigate to dashboard
+	if err := page.Navigate(dashboardURL); err != nil {
+		return nil, fmt.Errorf("failed to navigate to dashboard: %w", err)
+	}
+
+	// Wait for page to load
+	if err := page.WaitLoad(); err != nil {
+		return nil, fmt.Errorf("failed to wait for page load: %w", err)
+	}
+
+	// Additional delay for queries to finish (if configured)
 	if r.config.DelayMS > 0 {
 		time.Sleep(time.Duration(r.config.DelayMS) * time.Millisecond)
+		log.Printf("DEBUG: Waited %dms for dashboard queries to complete", r.config.DelayMS)
 	}
 
-	// Create a new context with timeout for the HTTP request
-	// Don't use the Grafana config context directly as it may have a short timeout
-	requestCtx, cancel := context.WithTimeout(context.Background(), time.Duration(r.config.TimeoutMS)*time.Millisecond)
-	defer cancel()
-
-	req, err := http.NewRequest("GET", renderURL, nil)
+	// Take screenshot
+	imageData, err := page.Screenshot(true, &proto.PageCaptureScreenshot{
+		Format:  proto.PageCaptureScreenshotFormatPng,
+		Quality: nil, // PNG doesn't use quality parameter
+	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
-	}
-	req = req.WithContext(requestCtx)
-
-	// Add auth token for Grafana
-	if saToken != "" {
-		req.Header.Set("Authorization", "Bearer "+saToken)
-		log.Printf("DEBUG: Added Authorization header with token from managed service account")
-	} else {
-		log.Printf("DEBUG: No token available from managed service account")
-	}
-
-	resp, err := r.client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to execute request: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("render failed with status %d: %s", resp.StatusCode, string(body))
-	}
-
-	data, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response: %w", err)
+		return nil, fmt.Errorf("failed to capture screenshot: %w", err)
 	}
 
 	// Verify it's a PNG by checking magic bytes
-	if len(data) < 8 || string(data[1:4]) != "PNG" {
-		return nil, fmt.Errorf("response is not a PNG image (got %d bytes, content type: %s)", len(data), resp.Header.Get("Content-Type"))
+	if len(imageData) < 8 || string(imageData[1:4]) != "PNG" {
+		return nil, fmt.Errorf("screenshot is not a PNG image (got %d bytes)", len(imageData))
 	}
 
-	return data, nil
+	log.Printf("DEBUG: Screenshot captured successfully (%d bytes)", len(imageData))
+	return imageData, nil
 }
 
-// buildGrafanaRenderURL constructs the Grafana render API URL
-func (r *Renderer) buildGrafanaRenderURL(schedule *model.Schedule) (string, error) {
-	// Use configured renderer URL from settings if available, otherwise fall back to grafanaURL
-	baseURL := r.grafanaURL
-	if r.rendererURL != "" {
-		baseURL = r.rendererURL
+// Close closes the browser instance
+func (r *Renderer) Close() error {
+	if r.browser != nil {
+		log.Printf("Closing Chromium browser")
+		return r.browser.Close()
 	}
-
-	u, err := url.Parse(baseURL)
-	if err != nil {
-		return "", err
-	}
-
-	// Only auto-adjust hostname if using the default grafanaURL (not custom renderer URL)
-	if r.rendererURL == "" {
-		// Ensure we're using the container hostname, not localhost
-		if u.Host == "localhost:3000" || u.Host == "127.0.0.1:3000" {
-			u.Host = "grafana:3000"
-		}
-	}
-
-	// Preserve any subpath from base URL (e.g., /dna from root_url)
-	basePath := u.Path
-	if basePath == "" || basePath == "/" {
-		basePath = ""
-	}
-
-	// Use Grafana's render API endpoint for full dashboard
-	u.Path = fmt.Sprintf("%s/render/d/%s", basePath, schedule.DashboardUID)
-
-	q := u.Query()
-	q.Set("from", schedule.RangeFrom)
-	q.Set("to", schedule.RangeTo)
-	q.Set("orgId", strconv.FormatInt(schedule.OrgID, 10))
-	q.Set("tz", schedule.Timezone)
-	q.Set("width", strconv.Itoa(r.config.ViewportWidth))
-	q.Set("height", strconv.Itoa(r.config.ViewportHeight))
-	q.Set("theme", "light")
-	q.Set("kiosk", "true") // Hide menu, header, and time picker
-
-	// Set device scale factor for higher quality (default to 3 if not configured)
-	scaleFactor := r.config.DeviceScaleFactor
-	if scaleFactor == 0 {
-		scaleFactor = 3.0
-	}
-	q.Set("scale", fmt.Sprintf("%.1f", scaleFactor))
-
-	// Add dashboard variables
-	for k, v := range schedule.Variables {
-		q.Set("var-"+k, v)
-	}
-
-	u.RawQuery = q.Encode()
-
-	return u.String(), nil
+	return nil
 }
 
 // buildDashboardURL constructs the Grafana dashboard URL
 func (r *Renderer) buildDashboardURL(schedule *model.Schedule) (string, error) {
-	// Use configured renderer URL from settings if available, otherwise fall back to grafanaURL
+	// Use configured grafanaURL
 	baseURL := r.grafanaURL
-	if r.rendererURL != "" {
-		baseURL = r.rendererURL
-	}
 
 	u, err := url.Parse(baseURL)
 	if err != nil {
 		return "", err
 	}
 
-	// Only auto-adjust hostname if using the default grafanaURL (not custom renderer URL)
-	if r.rendererURL == "" {
-		// Ensure we're using the container hostname, not localhost
-		// Replace localhost with grafana for Docker network
-		if u.Host == "localhost:3000" || u.Host == "127.0.0.1:3000" {
-			u.Host = "grafana:3000"
-		}
+	// Ensure we're using the container hostname, not localhost
+	if u.Host == "localhost:3000" || u.Host == "127.0.0.1:3000" {
+		u.Host = "grafana:3000"
 	}
 
 	// Preserve any subpath from base URL (e.g., /dna from root_url)
@@ -229,7 +241,7 @@ func (r *Renderer) buildDashboardURL(schedule *model.Schedule) (string, error) {
 	q := u.Query()
 	q.Set("from", schedule.RangeFrom)
 	q.Set("to", schedule.RangeTo)
-	q.Set("kiosk", "tv")
+	q.Set("kiosk", "tv") // Hide menu, header, and time picker
 	q.Set("orgId", strconv.FormatInt(schedule.OrgID, 10))
 	q.Set("tz", schedule.Timezone)
 
@@ -237,25 +249,6 @@ func (r *Renderer) buildDashboardURL(schedule *model.Schedule) (string, error) {
 	for k, v := range schedule.Variables {
 		q.Set("var-"+k, v)
 	}
-
-	u.RawQuery = q.Encode()
-
-	return u.String(), nil
-}
-
-// buildRendererURL constructs the renderer service URL
-func (r *Renderer) buildRendererURL(dashboardURL string) (string, error) {
-	u, err := url.Parse(r.rendererURL)
-	if err != nil {
-		return "", err
-	}
-
-	q := u.Query()
-	q.Set("url", dashboardURL)
-	q.Set("width", strconv.Itoa(r.config.ViewportWidth))
-	q.Set("height", strconv.Itoa(r.config.ViewportHeight))
-	q.Set("deviceScaleFactor", "1")
-	q.Set("timeout", strconv.Itoa(r.config.TimeoutMS/1000)) // Convert to seconds
 
 	u.RawQuery = q.Encode()
 

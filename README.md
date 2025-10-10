@@ -19,7 +19,7 @@
 ## Prerequisites
 
 - Grafana 10.3 or higher (for managed service accounts)
-- Grafana Image Renderer plugin or service
+- Chromium/Chrome browser (automatically installed in Docker, or system-installed for standalone deployments)
 - Go 1.21+ (for building)
 - Node.js 18+ (for building)
 
@@ -54,7 +54,7 @@ docker compose up -d
 
 This will start:
 - Grafana on http://localhost:3000 (admin/admin)
-- Grafana Image Renderer on http://localhost:8081
+- Chromium browser will be automatically installed in the Grafana container
 
 ### 4. Enable Plugin
 
@@ -135,9 +135,10 @@ After enabling the plugin, configure it in the Settings page:
 - Configure host, port, credentials, and TLS settings
 
 **Renderer Configuration**
-- Renderer URL (default: http://renderer:8081/render)
+- Chromium path (optional, auto-detected if not specified)
+- Headless mode, GPU, and sandbox settings
 - Timeout and delay settings for heavy dashboards
-- Viewport dimensions
+- Viewport dimensions and device scale factor
 
 **Limits**
 - Max recipients per email
@@ -211,10 +212,11 @@ Use these placeholders in email subject and body:
 **Problem**: Dashboard rendering returns errors
 
 **Solutions**:
-- Ensure grafana-image-renderer is running and accessible
+- Ensure Chromium is installed and accessible (in Docker: `docker exec -it <container> chromium --version`)
 - Verify the managed service account has proper dashboard permissions
 - Increase render timeout in Settings
 - Add render delay for heavy dashboards
+- For Docker deployments: ensure `no_sandbox` is enabled in renderer config
 
 ### Email Not Sending
 

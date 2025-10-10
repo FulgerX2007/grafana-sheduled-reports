@@ -21,7 +21,7 @@ This is a Grafana App Plugin for scheduled dashboard reporting in Grafana OSS. I
 **Core Components**:
 - **Frontend**: React/TypeScript app using Grafana UI components and app routing
 - **Backend**: Go plugin using Grafana Plugin SDK for HTTP routes, background workers, and secure storage
-- **Renderer**: Integrates with grafana-image-renderer service via Grafana's `/render` endpoints
+- **Renderer**: Embedded Chromium browser automation using go-rod for direct dashboard rendering
 - **Email**: SMTP client supporting either Grafana's SMTP settings or plugin-specific configuration
 - **Storage**: SQLite or BoltDB for schedules, runs, history, and templates (all scoped by OrgID)
 - **Auth**: Uses Grafana service account tokens stored in secure plugin settings
@@ -70,8 +70,8 @@ go test -v ./pkg/cron        # Test specific package
 
 ### Plugin Development
 ```bash
-# Run with Grafana (requires Docker)
-docker-compose up -d         # Start Grafana with renderer
+# Run with Grafana (requires Docker with Chromium)
+docker-compose up -d         # Start Grafana with embedded Chromium
 
 # Build both frontend and backend
 npm run build && go build -o dist/backend ./cmd/backend
@@ -116,11 +116,13 @@ When a user selects a dashboard in the schedule editor:
 Implementation in `ScheduleEditPage.tsx:63-80`
 
 ### Rendering Flow
-1. Build render URL: `/render/d/<uid>?from=X&to=Y&var-foo=bar&kiosk=tv&orgId=N`
-2. Add service account token in Authorization header
-3. Respect `render_delay_ms` for heavy dashboards to let queries finish
-4. Collect PNG images from rendered panels/dashboards
-5. Assemble PDF with gofpdf or HTML with embedded images
+1. Launch or reuse Chromium browser instance per organization
+2. Build dashboard URL: `/d/<uid>?from=X&to=Y&var-foo=bar&kiosk=tv&orgId=N`
+3. Set service account token in Authorization header via request hijacking
+4. Navigate to dashboard and wait for page load
+5. Respect `render_delay_ms` for heavy dashboards to let queries finish
+6. Capture full-page screenshot as PNG
+7. Assemble PDF with gofpdf or use PNG directly for HTML format
 
 ### Scheduling
 - Support cron expressions and presets (daily/weekly/monthly)
@@ -172,10 +174,12 @@ Implementation in `ScheduleEditPage.tsx:63-80`
 ## Environment Variables for Development
 
 ```bash
-GF_INSTALL_PLUGINS=grafana-image-renderer
 GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=<your-app-id>
-GF_RENDERING_SERVER_URL=http://renderer:8081/render
-GF_RENDERING_CALLBACK_URL=http://grafana:3000/
+# Optional: Custom Chromium binary path
+CHROMIUM_PATH=/usr/bin/chromium-browser
+# Optional: Chromium flags (automatically configured for Docker)
+CHROMIUM_NO_SANDBOX=true
+CHROMIUM_DISABLE_GPU=true
 ```
 
 ## Testing Strategy
@@ -210,9 +214,11 @@ docker-compose up -d
 ## Performance Considerations
 
 - **Large dashboards**: Increase timeouts, configure per-schedule render delay
-- **Backpressure**: Global render concurrency limit to avoid overwhelming renderer
+- **Browser reuse**: Browser instances are reused per-org to reduce initialization overhead
+- **Backpressure**: Global render concurrency limit to prevent memory exhaustion
 - **Artifact rotation**: Auto-delete old artifacts based on retention days
 - **Metrics endpoint**: Expose render time, success rate, queue length for observability
+- **Memory management**: Each browser instance consumes ~100-200MB, managed via worker pool
 
 ## Common Pitfalls to Avoid
 
@@ -221,3 +227,5 @@ docker-compose up -d
 - **Variable encoding**: Strictly URL-encode dashboard variables with special characters
 - **Renderer delays**: Heavy dashboards with complex queries need `render_delay_ms` adjustment
 - **Timezone handling**: Store schedules with explicit timezone, convert for cron evaluation
+- **Browser cleanup**: Always call renderer.Close() on shutdown to prevent zombie processes
+- **Docker sandbox**: Must enable `no_sandbox` flag for Chromium in Docker containers

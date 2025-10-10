@@ -110,13 +110,19 @@ type SMTPConfig struct {
 
 // RendererConfig holds renderer configuration
 type RendererConfig struct {
-	URL               string  `json:"url"`
+	URL               string  `json:"url"`                 // DEPRECATED: renderer service URL (kept for backward compatibility)
 	TimeoutMS         int     `json:"timeout_ms"`
 	DelayMS           int     `json:"delay_ms"`
 	ViewportWidth     int     `json:"viewport_width"`
 	ViewportHeight    int     `json:"viewport_height"`
 	DeviceScaleFactor float64 `json:"device_scale_factor"` // Higher values (2-4) increase image quality
 	SkipTLSVerify     bool    `json:"skip_tls_verify"`     // Skip TLS certificate verification
+
+	// Chromium-specific configuration
+	ChromiumPath      string  `json:"chromium_path"`       // Path to Chrome/Chromium binary (optional, auto-detect if empty)
+	Headless          bool    `json:"headless"`            // Run in headless mode (default: true)
+	DisableGPU        bool    `json:"disable_gpu"`         // Disable GPU acceleration for server environments
+	NoSandbox         bool    `json:"no_sandbox"`          // Disable sandbox (needed for Docker)
 }
 
 // Limits holds usage limits

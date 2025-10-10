@@ -27,6 +27,7 @@ type Scheduler struct {
 	artifactsPath string
 	workerPool    chan struct{}
 	baseCtx       context.Context // Context with Grafana config for background jobs
+	renderers     map[int64]*render.Renderer // Per-org renderer instances for browser reuse
 }
 
 // NewScheduler creates a new scheduler instance
@@ -38,6 +39,7 @@ func NewScheduler(st *store.Store, grafanaURL, artifactsPath string, maxConcurre
 		artifactsPath: artifactsPath,
 		workerPool:    make(chan struct{}, maxConcurrent),
 		baseCtx:       context.Background(), // Will be updated when plugin starts
+		renderers:     make(map[int64]*render.Renderer),
 	}
 }
 
@@ -60,10 +62,18 @@ func (s *Scheduler) Start() error {
 	return nil
 }
 
-// Stop stops the scheduler
+// Stop stops the scheduler and cleans up browser instances
 func (s *Scheduler) Stop() {
 	s.cron.Stop()
-	log.Println("Scheduler stopped")
+
+	// Close all browser instances
+	for orgID, renderer := range s.renderers {
+		if err := renderer.Close(); err != nil {
+			log.Printf("Failed to close renderer for org %d: %v", orgID, err)
+		}
+	}
+
+	log.Println("Scheduler stopped and browsers closed")
 }
 
 // checkDueSchedules checks for schedules that are due and executes them
@@ -176,10 +186,17 @@ func (s *Scheduler) executeScheduleOnce(schedule *model.Schedule, run *model.Run
 		return fmt.Errorf("no settings configured for org %d", schedule.OrgID)
 	}
 
-	log.Printf("DEBUG: Rendering with grafanaURL=%s, rendererURL=%s (using managed service account)", s.grafanaURL, settings.RendererConfig.URL)
+	log.Printf("DEBUG: Rendering with grafanaURL=%s (using Chromium with managed service account)", s.grafanaURL)
+
+	// Get or create renderer for this org (reuse browser instance)
+	renderer, exists := s.renderers[schedule.OrgID]
+	if !exists {
+		renderer = render.NewRenderer(s.grafanaURL, settings.RendererConfig)
+		s.renderers[schedule.OrgID] = renderer
+		log.Printf("Created new Chromium renderer for org %d", schedule.OrgID)
+	}
 
 	// Render dashboard (token will be retrieved from context inside renderer)
-	renderer := render.NewRenderer(s.grafanaURL, settings.RendererConfig)
 	imageData, err := renderer.RenderDashboard(ctx, schedule)
 	if err != nil {
 		return fmt.Errorf("failed to render dashboard: %w", err)
