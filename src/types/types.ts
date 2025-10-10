@@ -92,6 +92,7 @@ export interface SMTPConfig {
 
 export interface RendererConfig {
   backend?: 'chromium' | 'wkhtmltopdf';
+  grafana_url?: string; // Grafana base URL (e.g., https://127.0.0.1:3000/dna)
   url?: string; // DEPRECATED - kept for backward compatibility
   timeout_ms: number;
   delay_ms: number;

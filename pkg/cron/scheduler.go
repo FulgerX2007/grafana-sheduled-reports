@@ -192,19 +192,29 @@ func (s *Scheduler) executeScheduleOnce(schedule *model.Schedule, run *model.Run
 		backendType = render.BackendType(settings.RendererConfig.Backend)
 	}
 
-	log.Printf("DEBUG: Rendering with grafanaURL=%s, backend=%s (using managed service account)", s.grafanaURL, backendType)
+	// Use configured Grafana URL from settings, fall back to scheduler default
+	grafanaURL := s.grafanaURL
+	if settings.RendererConfig.GrafanaURL != "" {
+		grafanaURL = settings.RendererConfig.GrafanaURL
+		log.Printf("DEBUG: Using configured Grafana URL from settings: %s", grafanaURL)
+	} else {
+		log.Printf("DEBUG: Using default Grafana URL: %s", grafanaURL)
+	}
+
+	log.Printf("DEBUG: Rendering with grafanaURL=%s, backend=%s (using managed service account)", grafanaURL, backendType)
 
 	// Get or create renderer for this org (reuse renderer instance)
+	// Note: We need to recreate if backend OR grafanaURL changes
 	renderer, exists := s.renderers[schedule.OrgID]
 	if !exists || renderer.Name() != string(backendType) {
 		// Create new renderer if doesn't exist or backend changed
 		var err error
-		renderer, err = render.NewBackend(backendType, s.grafanaURL, settings.RendererConfig)
+		renderer, err = render.NewBackend(backendType, grafanaURL, settings.RendererConfig)
 		if err != nil {
 			return fmt.Errorf("failed to create renderer backend: %w", err)
 		}
 		s.renderers[schedule.OrgID] = renderer
-		log.Printf("Created new %s renderer for org %d", backendType, schedule.OrgID)
+		log.Printf("Created new %s renderer for org %d with URL %s", backendType, schedule.OrgID, grafanaURL)
 	}
 
 	// Render dashboard (token will be retrieved from context inside renderer)

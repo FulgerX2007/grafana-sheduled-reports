@@ -150,6 +150,17 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate }) => {
 
             <FieldSet label="Renderer Configuration">
               <Field
+                label="Grafana URL"
+                description="Full Grafana URL including protocol and subpath (e.g., https://127.0.0.1:3000/dna)"
+              >
+                <Input
+                  value={settings.renderer_config?.grafana_url || ''}
+                  onChange={(e) => updateRenderer('grafana_url', e.currentTarget.value)}
+                  placeholder="https://127.0.0.1:3000/dna"
+                />
+              </Field>
+
+              <Field
                 label="Rendering Backend"
                 description="Choose between Chromium (full features, ~300MB) or wkhtmltopdf (lightweight, ~12MB)"
               >

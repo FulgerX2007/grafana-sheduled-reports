@@ -111,6 +111,7 @@ type SMTPConfig struct {
 // RendererConfig holds renderer configuration
 type RendererConfig struct {
 	Backend           string  `json:"backend"`             // Rendering backend: "chromium" or "wkhtmltopdf" (default: "chromium")
+	GrafanaURL        string  `json:"grafana_url"`         // Grafana base URL (e.g., https://127.0.0.1:3000/dna)
 	URL               string  `json:"url"`                 // DEPRECATED: renderer service URL (kept for backward compatibility)
 	TimeoutMS         int     `json:"timeout_ms"`
 	DelayMS           int     `json:"delay_ms"`
