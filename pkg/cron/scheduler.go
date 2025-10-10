@@ -4,13 +4,13 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/robfig/cron/v3"
 	"github.com/yourusername/sheduled-reports-app/pkg/mail"
 	"github.com/yourusername/sheduled-reports-app/pkg/model"
@@ -67,7 +67,7 @@ func (s *Scheduler) Stop() {
 func (s *Scheduler) checkDueSchedules() {
 	schedules, err := s.store.GetDueSchedules()
 	if err != nil {
-		log.Printf("Failed to get due schedules: %v", err)
+		log.DefaultLogger.Error("Failed to get due schedules", "error", err)
 		return
 	}
 
@@ -76,7 +76,7 @@ func (s *Scheduler) checkDueSchedules() {
 		nextRun := s.calculateNextRun(schedule)
 		schedule.NextRunAt = &nextRun
 		if err := s.store.UpdateSchedule(schedule); err != nil {
-			log.Printf("Failed to update schedule %d next run time: %v", schedule.ID, err)
+			log.DefaultLogger.Error("Failed to update schedule next run time", "scheduleID", schedule.ID, "error", err)
 			continue
 		}
 
@@ -105,7 +105,7 @@ func (s *Scheduler) executeSchedule(schedule *model.Schedule) {
 	}
 
 	if err := s.store.CreateRun(run); err != nil {
-		log.Printf("Failed to create run record: %v", err)
+		log.DefaultLogger.Error("Failed to create run record", "error", err)
 		return
 	}
 
@@ -119,19 +119,19 @@ func (s *Scheduler) executeSchedule(schedule *model.Schedule) {
 	if err != nil {
 		run.Status = "failed"
 		run.ErrorText = err.Error()
-		log.Printf("Schedule %d execution failed: %v", schedule.ID, err)
+		log.DefaultLogger.Error("Schedule execution failed", "scheduleID", schedule.ID, "error", err)
 	} else {
 		run.Status = "completed"
 	}
 
 	if err := s.store.UpdateRun(run); err != nil {
-		log.Printf("Failed to update run record: %v", err)
+		log.DefaultLogger.Error("Failed to update run record", "error", err)
 	}
 
 	// Update schedule last run time
 	schedule.LastRunAt = &run.StartedAt
 	if err := s.store.UpdateSchedule(schedule); err != nil {
-		log.Printf("Failed to update schedule last run time: %v", err)
+		log.DefaultLogger.Error("Failed to update schedule last run time", "error", err)
 	}
 }
 
@@ -143,7 +143,7 @@ func (s *Scheduler) executeWithRetry(schedule *model.Schedule, run *model.Run, m
 		if attempt > 0 {
 			// Exponential backoff
 			backoff := time.Duration(attempt*attempt) * time.Second
-			log.Printf("Retrying schedule %d (attempt %d/%d) after %v", schedule.ID, attempt+1, maxRetries, backoff)
+			log.DefaultLogger.Warn("Retrying schedule", "scheduleID", schedule.ID, "attempt", attempt+1, "maxRetries", maxRetries, "backoff", backoff)
 			time.Sleep(backoff)
 		}
 
@@ -153,7 +153,7 @@ func (s *Scheduler) executeWithRetry(schedule *model.Schedule, run *model.Run, m
 		}
 
 		lastErr = err
-		log.Printf("Schedule %d execution attempt %d failed: %v", schedule.ID, attempt+1, err)
+		log.DefaultLogger.Error("Schedule execution attempt failed", "scheduleID", schedule.ID, "attempt", attempt+1, "error", err)
 	}
 
 	return fmt.Errorf("all %d attempts failed: %w", maxRetries, lastErr)
@@ -173,7 +173,7 @@ func (s *Scheduler) executeScheduleOnce(schedule *model.Schedule, run *model.Run
 		return fmt.Errorf("no settings configured for org %d", schedule.OrgID)
 	}
 
-	log.Printf("DEBUG: Rendering with grafanaURL=%s, mode=%s", s.grafanaURL, settings.RendererConfig.Mode)
+	log.DefaultLogger.Debug("Rendering", "grafanaURL", s.grafanaURL, "mode", settings.RendererConfig.Mode)
 
 	// Create renderer based on configuration
 	renderer, err := render.NewDashboardRenderer(s.grafanaURL, settings.RendererConfig)
@@ -309,7 +309,7 @@ func (s *Scheduler) calculateNextRun(schedule *model.Schedule) time.Time {
 			parser := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow)
 			sched, err := parser.Parse(schedule.CronExpr)
 			if err != nil {
-				log.Printf("Failed to parse cron expression %s: %v", schedule.CronExpr, err)
+				log.DefaultLogger.Error("Failed to parse cron expression", "expression", schedule.CronExpr, "error", err)
 				return now.Add(1 * time.Hour)
 			}
 			return sched.Next(now)
