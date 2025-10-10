@@ -27,7 +27,7 @@ type Scheduler struct {
 	artifactsPath string
 	workerPool    chan struct{}
 	baseCtx       context.Context // Context with Grafana config for background jobs
-	renderers     map[int64]*render.Renderer // Per-org renderer instances for browser reuse
+	renderers     map[int64]render.Backend // Per-org renderer instances for browser reuse
 }
 
 // NewScheduler creates a new scheduler instance
@@ -39,7 +39,7 @@ func NewScheduler(st *store.Store, grafanaURL, artifactsPath string, maxConcurre
 		artifactsPath: artifactsPath,
 		workerPool:    make(chan struct{}, maxConcurrent),
 		baseCtx:       context.Background(), // Will be updated when plugin starts
-		renderers:     make(map[int64]*render.Renderer),
+		renderers:     make(map[int64]render.Backend),
 	}
 }
 
@@ -186,14 +186,25 @@ func (s *Scheduler) executeScheduleOnce(schedule *model.Schedule, run *model.Run
 		return fmt.Errorf("no settings configured for org %d", schedule.OrgID)
 	}
 
-	log.Printf("DEBUG: Rendering with grafanaURL=%s (using Chromium with managed service account)", s.grafanaURL)
+	// Determine backend type from config (default to chromium)
+	backendType := render.BackendChromium
+	if settings.RendererConfig.Backend != "" {
+		backendType = render.BackendType(settings.RendererConfig.Backend)
+	}
 
-	// Get or create renderer for this org (reuse browser instance)
+	log.Printf("DEBUG: Rendering with grafanaURL=%s, backend=%s (using managed service account)", s.grafanaURL, backendType)
+
+	// Get or create renderer for this org (reuse renderer instance)
 	renderer, exists := s.renderers[schedule.OrgID]
-	if !exists {
-		renderer = render.NewRenderer(s.grafanaURL, settings.RendererConfig)
+	if !exists || renderer.Name() != string(backendType) {
+		// Create new renderer if doesn't exist or backend changed
+		var err error
+		renderer, err = render.NewBackend(backendType, s.grafanaURL, settings.RendererConfig)
+		if err != nil {
+			return fmt.Errorf("failed to create renderer backend: %w", err)
+		}
 		s.renderers[schedule.OrgID] = renderer
-		log.Printf("Created new Chromium renderer for org %d", schedule.OrgID)
+		log.Printf("Created new %s renderer for org %d", backendType, schedule.OrgID)
 	}
 
 	// Render dashboard (token will be retrieved from context inside renderer)

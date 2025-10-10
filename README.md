@@ -19,7 +19,9 @@
 ## Prerequisites
 
 - Grafana 10.3 or higher (for managed service accounts)
-- Chromium/Chrome browser (automatically installed in Docker, or system-installed for standalone deployments)
+- One of the following rendering backends:
+  - **Chromium/Chrome** (default, automatically installed in Docker)
+  - **wkhtmltopdf** (lighter alternative, ~12MB vs ~300MB for Chromium)
 - Go 1.21+ (for building)
 - Node.js 18+ (for building)
 
@@ -135,16 +137,98 @@ After enabling the plugin, configure it in the Settings page:
 - Configure host, port, credentials, and TLS settings
 
 **Renderer Configuration**
-- Chromium path (optional, auto-detected if not specified)
-- Headless mode, GPU, and sandbox settings
+- **Backend Selection**: Choose between Chromium or wkhtmltopdf
+  - **Chromium** (default): Full JavaScript support, higher fidelity, ~300MB
+  - **wkhtmltopdf**: Lighter weight, direct PDF output, ~12MB, perfect for Docker
+- Backend-specific paths (optional, auto-detected if not specified)
 - Timeout and delay settings for heavy dashboards
 - Viewport dimensions and device scale factor
+- Headless mode, GPU, and sandbox settings (Chromium only)
 
 **Limits**
 - Max recipients per email
 - Max attachment size
 - Max concurrent renders
 - Artifact retention days
+
+## Rendering Backends
+
+The plugin supports two rendering backends that you can choose based on your needs:
+
+### Chromium (Default)
+
+**Pros:**
+- Full JavaScript support with modern browser features
+- High rendering fidelity
+- Best for complex dashboards with heavy JavaScript
+- Per-organization browser instance reuse for better performance
+
+**Cons:**
+- Large binary size (~300MB)
+- Higher memory usage
+- Requires more system dependencies
+
+**Configuration:**
+```json
+{
+  "backend": "chromium",
+  "chromium_path": "/usr/bin/chromium",  // optional, auto-detected
+  "headless": true,
+  "no_sandbox": true,                     // required for Docker
+  "disable_gpu": true,                    // recommended for servers
+  "viewport_width": 1920,
+  "viewport_height": 1080,
+  "device_scale_factor": 2.0,            // higher = better quality
+  "timeout_ms": 30000,
+  "delay_ms": 2000                        // wait for queries to finish
+}
+```
+
+### wkhtmltopdf (Lightweight)
+
+**Pros:**
+- Small binary size (~12MB)
+- Low memory footprint
+- Direct PDF generation (no intermediate PNG)
+- Perfect for Docker/containerized deployments
+- Minimal system dependencies
+
+**Cons:**
+- Limited JavaScript support
+- May not render complex modern dashboards perfectly
+- Older WebKit-based engine
+
+**Configuration:**
+```json
+{
+  "backend": "wkhtmltopdf",
+  "wkhtmltopdf_path": "/usr/bin/wkhtmltopdf",  // optional, auto-detected
+  "viewport_width": 1920,
+  "viewport_height": 1080,
+  "device_scale_factor": 1.0,                   // used as zoom factor
+  "timeout_ms": 30000,
+  "delay_ms": 2000                              // JavaScript delay
+}
+```
+
+### Choosing a Backend
+
+**Use Chromium if:**
+- You have complex dashboards with heavy JavaScript
+- Image quality is critical
+- You have sufficient system resources (RAM, disk)
+- You need perfect rendering fidelity
+
+**Use wkhtmltopdf if:**
+- You're deploying in Docker/containers with size constraints
+- Your dashboards are relatively simple
+- You need minimal dependencies
+- Memory usage is a concern
+- You prefer direct PDF generation
+
+### Switching Backends
+
+You can switch backends at any time in the plugin Settings page. The change applies to all new report executions immediately. Existing schedules will automatically use the new backend.
 
 ## Usage
 
@@ -195,7 +279,10 @@ Use these placeholders in email subject and body:
 ### Backend (Go)
 - `pkg/api/` - HTTP API handlers
 - `pkg/cron/` - Scheduler and job execution
-- `pkg/render/` - Dashboard rendering client
+- `pkg/render/` - Multi-backend rendering system
+  - `interface.go` - Backend interface definition
+  - `chromium_renderer.go` - Chromium/Chrome implementation (go-rod)
+  - `wkhtmltopdf_renderer.go` - wkhtmltopdf implementation
 - `pkg/pdf/` - PDF generation from images
 - `pkg/mail/` - SMTP email sender
 - `pkg/store/` - SQLite database operations
@@ -212,11 +299,16 @@ Use these placeholders in email subject and body:
 **Problem**: Dashboard rendering returns errors
 
 **Solutions**:
-- Ensure Chromium is installed and accessible (in Docker: `docker exec -it <container> chromium --version`)
+- **Check backend installation**: Verify your chosen backend is installed
+  - Chromium: `docker exec -it <container> chromium --version`
+  - wkhtmltopdf: `docker exec -it <container> wkhtmltopdf --version`
+- **Try alternative backend**: Switch to wkhtmltopdf if Chromium fails, or vice versa
 - Verify the managed service account has proper dashboard permissions
 - Increase render timeout in Settings
 - Add render delay for heavy dashboards
-- For Docker deployments: ensure `no_sandbox` is enabled in renderer config
+- **For Chromium in Docker**: ensure `no_sandbox` is enabled in renderer config
+- **For complex dashboards**: Use Chromium backend for better JavaScript support
+- Check backend logs for specific error messages
 
 ### Email Not Sending
 

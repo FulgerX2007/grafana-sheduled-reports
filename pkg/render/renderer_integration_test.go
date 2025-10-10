@@ -69,7 +69,7 @@ func TestRenderDashboard_Integration(t *testing.T) {
 		DisableGPU:        true,
 	}
 
-	r := NewRenderer(mockGrafana.URL, config)
+	r := NewChromiumRenderer(mockGrafana.URL, config)
 	defer r.Close()
 
 	// Create test schedule
@@ -121,7 +121,7 @@ func TestBrowserReuse_Integration(t *testing.T) {
 		DisableGPU:    true,
 	}
 
-	r := NewRenderer("http://example.com", config)
+	r := NewChromiumRenderer("http://example.com", config)
 	defer r.Close()
 
 	// First getBrowser call should initialize
@@ -163,7 +163,7 @@ func TestBrowserCleanup_Integration(t *testing.T) {
 		DisableGPU: true,
 	}
 
-	r := NewRenderer("http://example.com", config)
+	r := NewChromiumRenderer("http://example.com", config)
 
 	// Initialize browser
 	_, err := r.getBrowser()
@@ -213,7 +213,7 @@ func TestRenderTimeout_Integration(t *testing.T) {
 		DisableGPU: true,
 	}
 
-	r := NewRenderer(slowServer.URL, config)
+	r := NewChromiumRenderer(slowServer.URL, config)
 	defer r.Close()
 
 	schedule := &model.Schedule{
@@ -266,7 +266,7 @@ func TestMultiplePagesSequential_Integration(t *testing.T) {
 		DisableGPU: true,
 	}
 
-	r := NewRenderer(mockServer.URL, config)
+	r := NewChromiumRenderer(mockServer.URL, config)
 	defer r.Close()
 
 	// Render multiple schedules sequentially
@@ -327,7 +327,7 @@ func TestRenderWithVariables_Integration(t *testing.T) {
 		DisableGPU: true,
 	}
 
-	r := NewRenderer(mockServer.URL, config)
+	r := NewChromiumRenderer(mockServer.URL, config)
 	defer r.Close()
 
 	schedule := &model.Schedule{

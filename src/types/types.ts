@@ -91,12 +91,23 @@ export interface SMTPConfig {
 }
 
 export interface RendererConfig {
-  url: string;
+  backend?: 'chromium' | 'wkhtmltopdf';
+  url?: string; // DEPRECATED - kept for backward compatibility
   timeout_ms: number;
   delay_ms: number;
   viewport_width: number;
   viewport_height: number;
+  device_scale_factor?: number;
   skip_tls_verify?: boolean;
+
+  // Chromium-specific
+  chromium_path?: string;
+  headless?: boolean;
+  disable_gpu?: boolean;
+  no_sandbox?: boolean;
+
+  // wkhtmltopdf-specific
+  wkhtmltopdf_path?: string;
 }
 
 export interface Limits {

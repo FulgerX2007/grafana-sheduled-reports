@@ -65,7 +65,7 @@ func TestNewRenderer(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := NewRenderer(tt.grafanaURL, tt.config)
+			r := NewChromiumRenderer(tt.grafanaURL, tt.config)
 
 			if r == nil {
 				t.Fatal("NewRenderer returned nil")
@@ -173,7 +173,7 @@ func TestBuildDashboardURL(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := NewRenderer(tt.grafanaURL, model.RendererConfig{})
+			r := NewChromiumRenderer(tt.grafanaURL, model.RendererConfig{})
 
 			url, err := r.buildDashboardURL(tt.schedule)
 
@@ -243,7 +243,7 @@ func TestGetServiceAccountToken(t *testing.T) {
 }
 
 func TestRendererClose(t *testing.T) {
-	r := NewRenderer("http://localhost:3000", model.RendererConfig{})
+	r := NewChromiumRenderer("http://localhost:3000", model.RendererConfig{})
 
 	// Should not error when browser is nil
 	err := r.Close()
@@ -257,7 +257,7 @@ func TestRendererClose(t *testing.T) {
 
 func TestRendererConfig_Defaults(t *testing.T) {
 	config := model.RendererConfig{}
-	r := NewRenderer("http://localhost:3000", config)
+	r := NewChromiumRenderer("http://localhost:3000", config)
 
 	expectedDefaults := map[string]interface{}{
 		"ViewportWidth":     1920,
@@ -295,7 +295,7 @@ func TestRendererConfig_CustomChromiumPath(t *testing.T) {
 		DisableGPU:   true,
 	}
 
-	r := NewRenderer("http://localhost:3000", config)
+	r := NewChromiumRenderer("http://localhost:3000", config)
 
 	if r.config.ChromiumPath != "/custom/path/chromium" {
 		t.Errorf("ChromiumPath = %v, want /custom/path/chromium", r.config.ChromiumPath)
@@ -315,7 +315,7 @@ func TestRendererConfig_TLSVerification(t *testing.T) {
 		SkipTLSVerify: true,
 	}
 
-	r := NewRenderer("http://localhost:3000", config)
+	r := NewChromiumRenderer("http://localhost:3000", config)
 
 	if !r.config.SkipTLSVerify {
 		t.Error("SkipTLSVerify should be true")
@@ -345,7 +345,7 @@ func TestScheduleTimezone(t *testing.T) {
 		},
 	}
 
-	r := NewRenderer("http://localhost:3000", model.RendererConfig{})
+	r := NewChromiumRenderer("http://localhost:3000", model.RendererConfig{})
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -377,12 +377,12 @@ func BenchmarkNewRenderer(b *testing.B) {
 	config := model.RendererConfig{}
 
 	for i := 0; i < b.N; i++ {
-		_ = NewRenderer("http://localhost:3000", config)
+		_ = NewChromiumRenderer("http://localhost:3000", config)
 	}
 }
 
 func BenchmarkBuildDashboardURL(b *testing.B) {
-	r := NewRenderer("http://localhost:3000", model.RendererConfig{})
+	r := NewChromiumRenderer("http://localhost:3000", model.RendererConfig{})
 	schedule := &model.Schedule{
 		DashboardUID: "bench-test",
 		RangeFrom:    "now-24h",
@@ -443,7 +443,7 @@ func TestLocalhostConversion(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := NewRenderer(tt.inputURL, model.RendererConfig{})
+			r := NewChromiumRenderer(tt.inputURL, model.RendererConfig{})
 			schedule := &model.Schedule{
 				DashboardUID: "test",
 				RangeFrom:    "now-1h",
@@ -471,7 +471,7 @@ func TestRenderDelay(t *testing.T) {
 		DelayMS: 5000,
 	}
 
-	r := NewRenderer("http://localhost:3000", config)
+	r := NewChromiumRenderer("http://localhost:3000", config)
 
 	if r.config.DelayMS != 5000 {
 		t.Errorf("DelayMS = %v, want 5000", r.config.DelayMS)
@@ -484,7 +484,7 @@ func TestRenderTimeout(t *testing.T) {
 		TimeoutMS: 60000,
 	}
 
-	r := NewRenderer("http://localhost:3000", config)
+	r := NewChromiumRenderer("http://localhost:3000", config)
 
 	if r.config.TimeoutMS != 60000 {
 		t.Errorf("TimeoutMS = %v, want 60000", r.config.TimeoutMS)

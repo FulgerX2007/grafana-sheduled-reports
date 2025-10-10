@@ -110,6 +110,7 @@ type SMTPConfig struct {
 
 // RendererConfig holds renderer configuration
 type RendererConfig struct {
+	Backend           string  `json:"backend"`             // Rendering backend: "chromium" or "wkhtmltopdf" (default: "chromium")
 	URL               string  `json:"url"`                 // DEPRECATED: renderer service URL (kept for backward compatibility)
 	TimeoutMS         int     `json:"timeout_ms"`
 	DelayMS           int     `json:"delay_ms"`
@@ -123,6 +124,9 @@ type RendererConfig struct {
 	Headless          bool    `json:"headless"`            // Run in headless mode (default: true)
 	DisableGPU        bool    `json:"disable_gpu"`         // Disable GPU acceleration for server environments
 	NoSandbox         bool    `json:"no_sandbox"`          // Disable sandbox (needed for Docker)
+
+	// wkhtmltopdf-specific configuration
+	WkhtmltopdfPath   string  `json:"wkhtmltopdf_path"`    // Path to wkhtmltopdf binary (optional, auto-detect if empty)
 }
 
 // Limits holds usage limits

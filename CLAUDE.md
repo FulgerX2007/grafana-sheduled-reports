@@ -21,7 +21,7 @@ This is a Grafana App Plugin for scheduled dashboard reporting in Grafana OSS. I
 **Core Components**:
 - **Frontend**: React/TypeScript app using Grafana UI components and app routing
 - **Backend**: Go plugin using Grafana Plugin SDK for HTTP routes, background workers, and secure storage
-- **Renderer**: Embedded Chromium browser automation using go-rod for direct dashboard rendering
+- **Renderer**: Multi-backend rendering system (Chromium via go-rod or wkhtmltopdf for lightweight deployments)
 - **Email**: SMTP client supporting either Grafana's SMTP settings or plugin-specific configuration
 - **Storage**: SQLite or BoltDB for schedules, runs, history, and templates (all scoped by OrgID)
 - **Auth**: Uses Grafana service account tokens stored in secure plugin settings
@@ -63,9 +63,10 @@ npm run test                 # Run tests
 ### Backend Development
 ```bash
 go mod download              # Download dependencies
-go build -o dist/backend ./cmd/backend   # Build backend plugin
+go build -o dist/gpx_reporting ./cmd/backend   # Build backend plugin
 go test ./...                # Run all tests
-go test -v ./pkg/cron        # Test specific package
+go test -v ./pkg/render      # Test rendering backends
+go test -v ./pkg/cron        # Test scheduler
 ```
 
 ### Plugin Development
@@ -103,6 +104,118 @@ All routes under `/api/<app-id>/`:
 - `GET/POST /templates` - Layout templates
 - `GET /dashboards/search` - Proxy to Grafana API for dashboard picker
 
+## Rendering Backend Architecture
+
+The plugin uses a **multi-backend rendering system** allowing users to choose between different rendering engines:
+
+### Backend Interface Pattern
+
+All rendering backends implement the `Backend` interface:
+
+```go
+type Backend interface {
+    RenderDashboard(ctx context.Context, schedule *model.Schedule) ([]byte, error)
+    Close() error
+    Name() string
+}
+```
+
+Factory function for runtime backend selection:
+```go
+func NewBackend(backendType BackendType, grafanaURL string, config model.RendererConfig) (Backend, error)
+```
+
+### Available Backends
+
+**1. Chromium Backend** (default - `chromium_renderer.go`)
+   - Uses `github.com/go-rod/rod` for browser automation
+   - Full JavaScript support with modern Chromium engine
+   - Per-organization browser instance reuse for performance
+   - Lazy initialization - browser created on first render
+   - Request hijacking for authentication header injection
+   - Binary size: ~300MB (including Chromium)
+   - Best for complex dashboards with heavy JavaScript
+
+**2. wkhtmltopdf Backend** (lightweight - `wkhtmltopdf_renderer.go`)
+   - Uses `github.com/SebastiaanKlippert/go-wkhtmltopdf` wrapper
+   - Direct PDF generation (no intermediate PNG)
+   - WebKit-based rendering engine
+   - Minimal system dependencies
+   - Binary size: ~12MB
+   - Best for simple dashboards and Docker/containerized deployments
+
+### Configuration
+
+Backend selection configured per organization in `RendererConfig`:
+
+```go
+type RendererConfig struct {
+    Backend           string  `json:"backend"`  // "chromium" or "wkhtmltopdf"
+
+    // Common settings (both backends)
+    TimeoutMS         int     `json:"timeout_ms"`
+    DelayMS           int     `json:"delay_ms"`
+    ViewportWidth     int     `json:"viewport_width"`
+    ViewportHeight    int     `json:"viewport_height"`
+    DeviceScaleFactor float64 `json:"device_scale_factor"`
+    SkipTLSVerify     bool    `json:"skip_tls_verify"`
+
+    // Chromium-specific
+    ChromiumPath      string  `json:"chromium_path"`
+    Headless          bool    `json:"headless"`
+    DisableGPU        bool    `json:"disable_gpu"`
+    NoSandbox         bool    `json:"no_sandbox"`
+
+    // wkhtmltopdf-specific
+    WkhtmltopdfPath   string  `json:"wkhtmltopdf_path"`
+}
+```
+
+### Runtime Backend Switching
+
+The scheduler (`pkg/cron/scheduler.go`) maintains per-org renderer instances:
+
+```go
+type Scheduler struct {
+    renderers map[int64]render.Backend  // Per-org renderer cache
+}
+
+// Get or create renderer for this org
+renderer, exists := s.renderers[schedule.OrgID]
+if !exists || renderer.Name() != string(backendType) {
+    // Create new renderer if doesn't exist or backend changed
+    renderer, err = render.NewBackend(backendType, s.grafanaURL, settings.RendererConfig)
+    s.renderers[schedule.OrgID] = renderer
+}
+```
+
+When backend type changes in settings, old renderer is replaced on next execution.
+
+### Authentication
+
+Both backends inject service account tokens for dashboard access:
+- **Chromium**: Via request hijacking with `rod.Hijack()`
+- **wkhtmltopdf**: Via `page.CustomHeader.Set("Authorization", "Bearer "+token)`
+
+### Adding New Backends
+
+To add a new rendering backend:
+
+1. Create `pkg/render/newbackend_renderer.go`
+2. Implement the `Backend` interface
+3. Add new `BackendType` constant to `interface.go`
+4. Update `NewBackend()` factory function in `interface.go`
+5. Add backend-specific config fields to `RendererConfig` in `pkg/model/models.go`
+6. Add tests to `renderer_test.go`
+7. Update documentation
+
+### Testing
+
+- **Unit tests**: `pkg/render/renderer_test.go` (11 test suites)
+- **Integration tests**: `pkg/render/renderer_integration_test.go` (7 scenarios)
+- Run with: `go test ./pkg/render/...`
+- Integration tests require Chromium: `go test -tags=integration ./pkg/render/`
+
 ## Key Implementation Patterns
 
 ### Dashboard Variable Auto-loading
@@ -116,13 +229,24 @@ When a user selects a dashboard in the schedule editor:
 Implementation in `ScheduleEditPage.tsx:63-80`
 
 ### Rendering Flow
-1. Launch or reuse Chromium browser instance per organization
+
+**Chromium Backend:**
+1. Get or create browser instance for org (lazy initialization)
 2. Build dashboard URL: `/d/<uid>?from=X&to=Y&var-foo=bar&kiosk=tv&orgId=N`
-3. Set service account token in Authorization header via request hijacking
-4. Navigate to dashboard and wait for page load
-5. Respect `render_delay_ms` for heavy dashboards to let queries finish
-6. Capture full-page screenshot as PNG
-7. Assemble PDF with gofpdf or use PNG directly for HTML format
+3. Create new page and set viewport dimensions
+4. Inject service account token via request hijacking
+5. Navigate to dashboard and wait for page load
+6. Respect `render_delay_ms` for heavy dashboards to let queries finish
+7. Capture full-page screenshot as PNG
+8. Assemble PDF with gofpdf or use PNG directly for HTML format
+
+**wkhtmltopdf Backend:**
+1. Build dashboard URL with all parameters
+2. Create PDF generator with page settings
+3. Add custom Authorization header for service account token
+4. Set JavaScript delay to allow queries to complete
+5. Generate PDF directly (no intermediate PNG)
+6. Return PDF bytes
 
 ### Scheduling
 - Support cron expressions and presets (daily/weekly/monthly)
