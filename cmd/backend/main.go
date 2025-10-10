@@ -43,9 +43,6 @@ func run() error {
 		grafanaURL = "http://localhost:3000"
 	}
 
-	log.Println("Using Grafana-managed service account for authentication")
-	log.Println("Token will be retrieved automatically from plugin context")
-
 	// Create artifacts directory
 	artifactsPath := filepath.Join(dataPath, "artifacts")
 	if err := os.MkdirAll(artifactsPath, 0755); err != nil {

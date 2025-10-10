@@ -54,7 +54,6 @@ func (s *Scheduler) Start() error {
 	}
 
 	s.cron.Start()
-	log.Println("Scheduler started")
 
 	return nil
 }
@@ -62,7 +61,6 @@ func (s *Scheduler) Start() error {
 // Stop stops the scheduler
 func (s *Scheduler) Stop() {
 	s.cron.Stop()
-	log.Println("Scheduler stopped")
 }
 
 // checkDueSchedules checks for schedules that are due and executes them
